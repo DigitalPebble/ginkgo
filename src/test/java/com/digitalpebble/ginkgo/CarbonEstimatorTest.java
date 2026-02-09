@@ -54,16 +54,12 @@ class CarbonEstimatorTest {
         ActionsBill bill = loadTestBill();
         CarbonEstimator.calculateCarbonImpact(bill);
 
-        // "Actions Linux ARM", 29 minutes, ubuntu-arm = 45W, pue = 1.15, grid = 475 gCO2e/kWh
+        // "Actions Linux ARM", 29 minutes, ubuntu-arm = 45W, pue = 1.16, grid = 352
         UsageItem item = bill.getUsageItems().get(1);
         assertEquals("Actions Linux ARM", item.getSku());
 
-        double expectedHours = 29.0 / 60.0;
-        double expectedEnergyWh = 45.0 * expectedHours * 1.15;
-        double expectedCo2eqG = expectedEnergyWh / 1000.0 * 475.0;
-
-        assertEquals(expectedEnergyWh, item.getEnergyUsageWh(), 1e-9);
-        assertEquals(expectedCo2eqG, item.getCo2eqG(), 1e-9);
+        assertEquals(25.230, item.getEnergyUsageWh(), 1e-3);
+        assertEquals(8.881, item.getCo2eqG(), 1e-3);
     }
 
     @Test
@@ -71,16 +67,12 @@ class CarbonEstimatorTest {
         ActionsBill bill = loadTestBill();
         CarbonEstimator.calculateCarbonImpact(bill);
 
-        // "Actions Linux", 67 minutes, ubuntu = 65W, pue = 1.15, grid = 475 gCO2e/kWh
+        // "Actions Linux", 67 minutes, ubuntu = 65W, pue = 1.16, grid = 352
         UsageItem item = bill.getUsageItems().get(2);
         assertEquals("Actions Linux", item.getSku());
 
-        double expectedHours = 67.0 / 60.0;
-        double expectedEnergyWh = 65.0 * expectedHours * 1.15;
-        double expectedCo2eqG = expectedEnergyWh / 1000.0 * 475.0;
-
-        assertEquals(expectedEnergyWh, item.getEnergyUsageWh(), 1e-9);
-        assertEquals(expectedCo2eqG, item.getCo2eqG(), 1e-9);
+        assertEquals(84.197, item.getEnergyUsageWh(), 1e-3);
+        assertEquals(29.637, item.getCo2eqG(), 1e-3);
     }
 
     @Test

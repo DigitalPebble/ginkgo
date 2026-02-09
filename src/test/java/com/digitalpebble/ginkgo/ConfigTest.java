@@ -18,12 +18,12 @@ class ConfigTest {
 
     @Test
     void gridCarbonIntensity() {
-        assertEquals(475, Config.getInstance().getGridCarbonIntensity(), 1e-9);
+        assertEquals(352, Config.getInstance().getGridCarbonIntensity(), 1e-9);
     }
 
     @Test
     void pue() {
-        assertEquals(1.15, Config.getInstance().getPue(), 1e-9);
+        assertEquals(1.16, Config.getInstance().getPue(), 1e-9);
     }
 
     @Test

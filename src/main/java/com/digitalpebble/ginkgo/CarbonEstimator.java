@@ -15,40 +15,52 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Locale;
 
 public class CarbonEstimator {
-    
+
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    
+
     public static void main(String[] args) {
         try {
-            String token = getEnvRequired("INPUT_GITHUB-TOKEN");
-            String organization = getEnvRequired("INPUT_ORGANIZATION");
-            String outputPath = getEnv("INPUT_OUTPUT-PATH", "carbon-estimate.json");
-            
-            System.out.println("Fetching billing data for organization: " + organization);
-            
-            ActionsBill actionsBill = fetchBillingUsage(token, organization);
-            System.out.println("Loaded " + actionsBill.getUsageItems().size() + " usage items");
+            // if an arg is passed, consider that it is a file that can be loaded locally
+            ActionsBill actionsBill = null;
+
+            String inputPath = null;
+            if (args.length == 1) {
+                inputPath = args[0];
+                System.out.println("Loading billing data from file: " + inputPath);
+                actionsBill = loadBillingUsage(Paths.get(inputPath));
+                System.out.println("Loaded " + actionsBill.getUsageItems().size() + " usage items");
+            } else {
+                String token = getEnvRequired("INPUT_GITHUB-TOKEN");
+                String organization = getEnvRequired("INPUT_ORGANIZATION");
+                System.out.println("Fetching billing data for organization: " + organization);
+                actionsBill = fetchBillingUsage(token, organization);
+                System.out.println("Loaded " + actionsBill.getUsageItems().size() + " usage items");
+            }
 
             System.out.println("Estimating carbon footprint...");
             calculateCarbonImpact(actionsBill);
 
-            Path output = Paths.get("/github/workspace", outputPath);
+            String outputPath = getEnv("OUTPUT-PATH", "./carbon-estimate.json");
+
+            Path output = Paths.get(outputPath);
             Files.createDirectories(output.getParent());
             Files.writeString(output, actionsBill.toJson());
-            
+
             System.out.println("Carbon estimate saved to: " + outputPath);
-            System.out.println("::set-output name=report-path::" + outputPath);
-            
+
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
     }
-    
+
+    static ActionsBill loadBillingUsage(Path path) throws IOException {
+        return ActionsBill.fromFile(path);
+    }
+
     private static ActionsBill fetchBillingUsage(String token, String organization) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
 
@@ -69,7 +81,7 @@ public class CarbonEstimator {
 
         return ActionsBill.fromJson(actionsResponse.body());
     }
-    
+
     static void calculateCarbonImpact(ActionsBill actionsBill) {
         Config config = Config.getInstance();
         double pue = config.getPue();
@@ -90,14 +102,14 @@ public class CarbonEstimator {
             double energyWh = powerWatts * hours * pue;
             double co2eqG = energyWh / 1000.0 * gridIntensity;
 
-            item.setEnergyUsageWh(energyWh);
-            item.setCo2eqG(co2eqG);
+            item.setEnergyUsageWh(Math.round(energyWh * 1000.0) / 1000.0);
+            item.setCo2eqG(Math.round(co2eqG * 1000.0) / 1000.0);
         }
     }
 
     private static double getRunnerPower(Config config, String sku) {
         String runner = null;
-        switch (sku){
+        switch (sku) {
             case "Actions Linux ARM":
                 runner = "ubuntu-arm";
                 break;
@@ -105,11 +117,13 @@ public class CarbonEstimator {
                 runner = "ubuntu";
                 break;
         }
-        if (runner==null){ return -1d; }
+        if (runner == null) {
+            return -1d;
+        }
 
         return config.getRunnerPowerConsumption().get(runner);
     }
-    
+
     private static String getEnvRequired(String name) {
         String value = System.getenv(name);
         if (value == null || value.isEmpty()) {
@@ -117,7 +131,7 @@ public class CarbonEstimator {
         }
         return value;
     }
-    
+
     private static String getEnv(String name, String defaultValue) {
         String value = System.getenv(name);
         return (value != null && !value.isEmpty()) ? value : defaultValue;
