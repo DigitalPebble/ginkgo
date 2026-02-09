@@ -11,9 +11,7 @@ Named after the ancient Ginkgo tree, one of the world's oldest living tree speci
 ## Features
 
 - Fetches GitHub Actions billing data (minutes used across all runners)
-- Calculates estimated carbon emissions based on compute usage
-- Supports Packages and Storage billing analysis
-- Generates detailed reports for organizational tracking
+- Calculates estimated carbon emissions based on billed usage
 - Runs as a GitHub Action in your workflows
 
 ## Usage
@@ -72,17 +70,9 @@ You can create a fine-grained personal access token with only the `billing:read`
 
 The carbon estimation logic is implemented in the `calculateCarbonImpact` method in `CarbonEstimator.java`. 
 
-**Current implementation is a placeholder.** You'll need to replace it with:
-- Runner-specific energy consumption models (different runners have different power profiles)
-- Regional carbon intensity data (data center locations have different grid carbon intensity)
-- Time-based analysis (grid carbon intensity varies by time of day)
-- Storage and network transfer estimates
-
-### Recommended Resources for Implementation
-
-- [Green Software Foundation Carbon Aware SDK](https://github.com/Green-Software-Foundation/carbon-aware-sdk)
-- [Cloud Carbon Footprint](https://www.cloudcarbonfootprint.org/)
-- [GitHub's own sustainability approach](https://github.blog/changelog/2021-04-22-github-actions-all-actions-will-run-on-node16-instead-of-node12/)
+The energy consumption estimates are taken from [BoaviztAPI](https://github.com/Boavizta/boaviztapi), the carbon intensity factor
+is an average for the Azure regions from the [ElectricityMaps](https://app.electricitymaps.com/datasets) datasets for 2024. 
+The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for the datacentres in America in 2025. 
 
 ## Development
 
@@ -104,18 +94,10 @@ docker run --rm \
   ginkgo
 ```
 
-## Contributing
-
-Contributions are welcome, especially:
-- Improved carbon estimation models
-- Support for additional runner types
-- Regional carbon intensity data integration
-- Visualization and reporting enhancements
-
 ## License
 
 Apache License 2.0
 
 ## Credits
 
-Developed by [DigitalPebble](https://digitalpebble.com/)
+Developed by [DigitalPebble](https://digitalpebble.com/). Please get in touch if you need our help with GreenOps or digital sustainability in general.

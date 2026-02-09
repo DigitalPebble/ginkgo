@@ -1,10 +1,10 @@
 {
   "power_consumption": {
-    "description": "Power consumption in Watts for different runner types",
+    "description": "Power consumption in Watts per hour for different runner types - value below are temporary",
     "runners": {
       "ubuntu": {
         "value": 65,
-        "description": "Standard 2-vCPU x86 Ubuntu VM"
+        "description": "Standard 2-vCPU x86 Ubuntu VM, based on a D4as_v4"
       },
       "ubuntu-arm": {
         "value": 45,
@@ -30,10 +30,10 @@
   },
   "grid_carbon_intensity": {
     "description": "US average carbon intensity in grams CO2e per kWh, ElectricityMaps dataset 2024",
-    "value": 475
+    "value": 352
   },
   "pue": {
     "description": "Power Usage Effectiveness - ratio of total data center power to IT equipment power. Accounts for cooling, power distribution, and other overhead",
-    "value": 1.15
+    "value": 1.16
   }
 }
