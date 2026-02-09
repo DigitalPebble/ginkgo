@@ -1,0 +1,82 @@
+{
+  "usageItems": [
+    {
+      "date": "2026-01-01T00:00:00Z",
+      "product": "actions",
+      "sku": "Actions storage",
+      "quantity": 1.978155783,
+      "unitType": "GigabyteHours",
+      "pricePerUnit": 0.00033602,
+      "grossAmount": 0.000664386,
+      "discountAmount": 0.000664386,
+      "netAmount": 0.0,
+      "organizationName": "DigitalPebble",
+      "repositoryName": "spruce"
+    },
+    {
+      "date": "2026-01-01T04:20:40Z",
+      "product": "actions",
+      "sku": "Actions Linux ARM",
+      "quantity": 29.0,
+      "unitType": "Minutes",
+      "pricePerUnit": 0.005,
+      "grossAmount": 0.145,
+      "discountAmount": 0.145,
+      "netAmount": 0.0,
+      "organizationName": "DigitalPebble",
+      "repositoryName": "spruce"
+    },
+    {
+      "date": "2026-01-01T04:20:58Z",
+      "product": "actions",
+      "sku": "Actions Linux",
+      "quantity": 67.0,
+      "unitType": "Minutes",
+      "pricePerUnit": 0.006,
+      "grossAmount": 0.402,
+      "discountAmount": 0.402,
+      "netAmount": 0.0,
+      "organizationName": "DigitalPebble",
+      "repositoryName": "spruce"
+    },
+    {
+      "date": "2026-02-01T00:00:00Z",
+      "product": "actions",
+      "sku": "Actions storage",
+      "quantity": 0.524676064,
+      "unitType": "GigabyteHours",
+      "pricePerUnit": 0.00033602,
+      "grossAmount": 0.000176218,
+      "discountAmount": 0.000176218,
+      "netAmount": 0.0,
+      "organizationName": "DigitalPebble",
+      "repositoryName": "spruce"
+    },
+    {
+      "date": "2026-02-01T04:48:44Z",
+      "product": "actions",
+      "sku": "Actions Linux",
+      "quantity": 23.0,
+      "unitType": "Minutes",
+      "pricePerUnit": 0.006,
+      "grossAmount": 0.138,
+      "discountAmount": 0.138,
+      "netAmount": 0.0,
+      "organizationName": "DigitalPebble",
+      "repositoryName": "spruce"
+    },
+    {
+      "date": "2026-02-01T04:49:03Z",
+      "product": "actions",
+      "sku": "Actions Linux ARM",
+      "quantity": 14.0,
+      "unitType": "Minutes",
+      "pricePerUnit": 0.005,
+      "grossAmount": 0.07,
+      "discountAmount": 0.07,
+      "netAmount": 0.0,
+      "organizationName": "DigitalPebble",
+      "repositoryName": "spruce"
+    }
+  ]
+}

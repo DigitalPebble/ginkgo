@@ -1,0 +1,27 @@
+name: 'Ginkgo - GitHub Actions Carbon Estimator'
+description: 'Estimate the environmental impact of GitHub Actions for your organization'
+author: 'DigitalPebble'
+
+inputs:
+  github-token:
+    description: 'GitHub token with billing:read permission'
+    required: true
+  organization:
+    description: 'GitHub organization name'
+    required: true
+  output-path:
+    description: 'Path where the carbon estimate report will be saved'
+    required: false
+    default: 'carbon-estimate.json'
+
+outputs:
+  report-path:
+    description: 'Path to the generated carbon estimate report'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+
+branding:
+  icon: 'leaf'
+  color: 'green'
