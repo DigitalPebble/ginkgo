@@ -45,7 +45,19 @@ jobs:
           path: reports/carbon-estimate.json
 ```
 
+### Running Locally with a Billing File
+
+Instead of fetching data from the GitHub API, you can pass a local billing JSON file as an argument:
+
+```bash
+java -jar target/ginkgo.jar actions_bill.json
+```
+
+The output path defaults to `carbon-estimate.json` and can be overridden with the `OUTPUT-PATH` environment variable.
+
 ## Inputs
+
+When running as a CLI tool, the first argument is an optional path to a local billing JSON file. If provided, the GitHub API is not called and `github-token`/`organization` inputs are not required.
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
@@ -92,6 +104,12 @@ docker run --rm \
   -e INPUT_OUTPUT-PATH=carbon-estimate.json \
   -v $(pwd):/github/workspace \
   ginkgo
+```
+
+Or with a local file:
+
+```bash
+java -jar target/ginkgo.jar path/to/actions_bill.json
 ```
 
 ## License
