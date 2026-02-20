@@ -6,7 +6,7 @@ Estimate the environmental impact of GitHub Actions for your entire organization
 
 Ginkgo helps organizations understand and track the carbon footprint of their GitHub Actions workflows by analyzing billing data and applying carbon estimation models.
 For measuring carbon emissions per workflow, look at [CarbonCi](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
-The billing data can be retrieved using the [GitHub API](https://docs.github.com/en/rest/billing/usage?apiVersion=2022-11-28).
+The billing data can be retrieved using the [GitHub API](https://docs.github.com/en/rest/billing/usage?apiVersion=2022-11-28#get-billing-usage-report-for-an-organization).
 
 Named after the ancient Ginkgo tree, one of the world's oldest living tree species and a symbol of resilience and sustainability.
 

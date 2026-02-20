@@ -70,26 +70,37 @@ fn main() -> Result<()> {
 
 fn fetch_billing_usage(token: &str, organization: &str) -> Result<ActionsBill> {
     let url = format!(
-        "https://api.github.com/orgs/{}/settings/billing/actions",
+        "https://api.github.com/organizations/{}/settings/billing/usage",
         organization
     );
 
     let client = reqwest::blocking::Client::new();
-    let response = client
+    let request = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", token))
         .header("Accept", "application/vnd.github+json")
         .header("X-GitHub-Api-Version", "2022-11-28")
-        .send()
+        .header("User-Agent", format!("Ginkgo/{}", organization))
+        .build()
+        .context("Failed to build request")?;
+
+    let headers = request.headers().clone();
+    let response = client
+        .execute(request)
         .context("Failed to send request to GitHub API")?;
 
     let status = response.status();
     if !status.is_success() {
         let body = response.text().unwrap_or_default();
+        let curl = headers.iter().fold(
+            format!("curl -s \"{}\"", url),
+            |acc, (k, v)| format!("{} -H \"{}: {}\"", acc, k, v.to_str().unwrap_or("?")),
+        );
         bail!(
-            "Failed to fetch Actions billing: {} - {}",
+            "Failed to fetch Actions billing: {} - {}\n{}",
             status.as_u16(),
-            body
+            body,
+            curl
         );
     }
 

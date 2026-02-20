@@ -7,7 +7,7 @@ pub fn calculate_carbon_impact(bill: &mut ActionsBill) {
     let grid_intensity = config.grid_carbon_intensity;
 
     for item in &mut bill.usage_items {
-        if item.unit_type != "Minutes" {
+        if item.unit_type.to_lowercase() != "minutes" {
             continue;
         }
 
