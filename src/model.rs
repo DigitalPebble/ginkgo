@@ -45,9 +45,4 @@ impl ActionsBill {
         Ok(serde_json::to_string_pretty(self)?)
     }
 
-    pub fn to_file(&self, path: &Path) -> anyhow::Result<()> {
-        let json = self.to_json()?;
-        fs::write(path, json)?;
-        Ok(())
-    }
 }

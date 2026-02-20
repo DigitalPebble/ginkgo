@@ -3,25 +3,53 @@ mod estimator;
 mod model;
 
 use anyhow::{bail, Context, Result};
+use clap::Parser;
 use model::ActionsBill;
-use std::env;
 use std::fs;
 use std::path::Path;
 
-fn main() -> Result<()> {
-    let args: Vec<String> = env::args().collect();
+/// Ginkgo - GitHub Actions Carbon Estimator
+#[derive(Parser)]
+#[command(version, about)]
+struct Cli {
+    /// Path to a local billing JSON file (instead of fetching from GitHub API)
+    #[arg(short, long)]
+    file: Option<String>,
 
-    let bill = if args.len() == 2 {
-        let input_path = &args[1];
+    /// GitHub token with billing:read permission
+    #[arg(short, long, env = "INPUT_GITHUB_TOKEN")]
+    token: Option<String>,
+
+    /// GitHub organization name
+    #[arg(short, long, env = "INPUT_ORGANIZATION")]
+    organization: Option<String>,
+
+    /// Path where the carbon estimate report will be saved
+    #[arg(short = 'O', long, env = "INPUT_OUTPUT_PATH", default_value = "./carbon-estimate.json")]
+    output: String,
+}
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    let bill = if let Some(input_path) = &cli.file {
         println!("Loading billing data from file: {}", input_path);
         let bill = ActionsBill::from_file(Path::new(input_path))?;
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     } else {
-        let token = get_env_required("INPUT_GITHUB_TOKEN")?;
-        let organization = get_env_required("INPUT_ORGANIZATION")?;
+        let token = cli
+            .token
+            .as_deref()
+            .filter(|s| !s.is_empty())
+            .context("GitHub token is required when not using --file (set --token or INPUT_GITHUB_TOKEN)")?;
+        let organization = cli
+            .organization
+            .as_deref()
+            .filter(|s| !s.is_empty())
+            .context("Organization is required when not using --file (set --organization or INPUT_ORGANIZATION)")?;
         println!("Fetching billing data for organization: {}", organization);
-        let bill = fetch_billing_usage(&token, &organization)?;
+        let bill = fetch_billing_usage(token, organization)?;
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     };
@@ -30,15 +58,13 @@ fn main() -> Result<()> {
     println!("Estimating carbon footprint...");
     estimator::calculate_carbon_impact(&mut bill);
 
-    let output_path = get_env("INPUT_OUTPUT_PATH", "./carbon-estimate.json");
-
-    if let Some(parent) = Path::new(&output_path).parent() {
+    if let Some(parent) = Path::new(&cli.output).parent() {
         fs::create_dir_all(parent)?;
     }
     let json = bill.to_json()?;
-    fs::write(&output_path, json)?;
+    fs::write(&cli.output, json)?;
 
-    println!("Carbon estimate saved to: {}", output_path);
+    println!("Carbon estimate saved to: {}", cli.output);
     Ok(())
 }
 
@@ -69,19 +95,4 @@ fn fetch_billing_usage(token: &str, organization: &str) -> Result<ActionsBill> {
 
     let body = response.text()?;
     ActionsBill::from_json(&body)
-}
-
-fn get_env_required(name: &str) -> Result<String> {
-    let value = env::var(name).unwrap_or_default();
-    if value.is_empty() {
-        bail!("Required environment variable not set: {}", name);
-    }
-    Ok(value)
-}
-
-fn get_env(name: &str, default: &str) -> String {
-    env::var(name)
-        .ok()
-        .filter(|v| !v.is_empty())
-        .unwrap_or_else(|| default.to_string())
 }

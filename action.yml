@@ -17,10 +17,32 @@ inputs:
 outputs:
   report-path:
     description: 'Path to the generated carbon estimate report'
+    value: ${{ steps.report.outputs.report-path }}
 
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: 'composite'
+  steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+
+    - name: Build ginkgo
+      shell: bash
+      run: cargo build --release --manifest-path ${{ github.action_path }}/Cargo.toml
+
+    - name: Run ginkgo
+      shell: bash
+      run: >
+        ${{ github.action_path }}/target/release/ginkgo
+        --token "${{ inputs.github_token }}"
+        --organization "${{ inputs.organization }}"
+        --output "${{ inputs.output_path }}"
+
+    - name: Set output
+      shell: bash
+      id: report
+      run: echo "report-path=${{ inputs.output_path }}" >> "$GITHUB_OUTPUT"
 
 branding:
   icon: 'leaf'

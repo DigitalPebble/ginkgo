@@ -14,7 +14,7 @@ Named after the ancient Ginkgo tree, one of the world's oldest living tree speci
 
 - Fetches GitHub Actions billing data (minutes used across all runners)
 - Calculates estimated carbon emissions based on billed usage
-- Runs as a GitHub Action in your workflows or on the command line 
+- Runs as a GitHub Action in your workflows or on the command line
 
 ## Build
 
@@ -22,42 +22,54 @@ Named after the ancient Ginkgo tree, one of the world's oldest living tree speci
 cargo build --release
 ```
 
-## Usage
+## CLI Usage
+
+```
+Ginkgo - GitHub Actions Carbon Estimator
+
+Usage: ginkgo [OPTIONS]
+
+Options:
+  -f, --file <FILE>                  Path to a local billing JSON file (instead of fetching from GitHub API)
+  -t, --token <TOKEN>                GitHub token with billing:read permission [env: INPUT_GITHUB_TOKEN]
+  -o, --organization <ORGANIZATION>  GitHub organization name [env: INPUT_ORGANIZATION]
+  -O, --output <OUTPUT>              Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH] [default: ./carbon-estimate.json]
+  -h, --help                         Print help
+  -V, --version                      Print version
+```
 
 ### From a local billing file
 
-With the *GH CLI* and *jq* installed
+With the *GH CLI* and *jq* installed:
 
 ```bash
-export GH_ORG=your-org
-
-gh api /organizations/$GH_ORG/settings/billing/usage | jq > gh_bill.json 
-./target/release/ginkgo gh_bill.json 
+gh api /organizations/your-org/settings/billing/usage | jq > gh_bill.json
+./target/release/ginkgo --file gh_bill.json
 ```
 
-## Inputs
+### From the GitHub API
 
-When running as a CLI tool, the first argument is an optional path to a local billing JSON file. If provided, the GitHub API is not called and `github-token`/`organization` inputs are not required.
+```bash
+./target/release/ginkgo --token ghp_... --organization your-org
+```
+
+The output is written to the path specified by `--output` (defaults to `./carbon-estimate.json`).
+
+## GitHub Action Usage
+
+```yaml
+- uses: DigitalPebble/ginkgo@main
+  with:
+    github_token: ${{ secrets.BILLING_TOKEN }}
+    organization: your-org
+    output_path: carbon-estimate.json  # optional
+```
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `github-token` | Yes | - | GitHub token with `billing:read` permission |
+| `github_token` | Yes | - | GitHub token with `billing:read` permission |
 | `organization` | Yes | - | GitHub organization name |
-| `output-path` | No | `carbon-estimate.json` | Path where the report will be saved |
-
-
-### From the GitHub API (WORK IN PROGRESS)
-
-Set the required environment variables and run without arguments:
-
-```bash
-export GH_TOKEN=ghp_...
-export GH_ORG=your-org
-
-./target/release/ginkgo
-```
-
-The output is written to the path specified by the `OUTPUT_PATH` environment variable (defaults to `./carbon-estimate.json`).
+| `output_path` | No | `carbon-estimate.json` | Path where the report will be saved |
 
 ## Required Permissions
 
@@ -68,12 +80,9 @@ You can create a fine-grained personal access token with only the `billing:read`
 
 ## Carbon Estimation Methodology
 
-The carbon estimation logic is implemented in the `calculateCarbonImpact` method in `CarbonEstimator.java`. 
-
 The energy consumption estimates are taken from [BoaviztAPI](https://github.com/Boavizta/boaviztapi), the carbon intensity factor
-is an average for the Azure regions from the [ElectricityMaps](https://app.electricitymaps.com/datasets) datasets for 2024. 
-The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for the datacentres in America in 2025. 
-
+is an average for the Azure regions from the [ElectricityMaps](https://app.electricitymaps.com/datasets) datasets for 2024.
+The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for the datacentres in America in 2025.
 
 ## License
 
@@ -82,4 +91,3 @@ Apache License 2.0
 ## Credits
 
 Developed by [DigitalPebble](https://digitalpebble.com/). Please get in touch if you need our help with GreenOps or digital sustainability in general.
-```
