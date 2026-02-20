@@ -3,13 +3,13 @@ description: 'Estimate the environmental impact of GitHub Actions for your organ
 author: 'DigitalPebble'
 
 inputs:
-  github-token:
+  github_token:
     description: 'GitHub token with billing:read permission'
     required: true
   organization:
     description: 'GitHub organization name'
     required: true
-  output-path:
+  output_path:
     description: 'Path where the carbon estimate report will be saved'
     required: false
     default: 'carbon-estimate.json'
