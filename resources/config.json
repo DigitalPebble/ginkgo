@@ -1,30 +1,34 @@
 {
   "power_consumption": {
-    "description": "Power consumption in Watts per hour for different runner types - value below are temporary",
+    "description": "Power consumption in Watts per hour for different runner types",
     "runners": {
       "ubuntu": {
-        "value": 65,
-        "description": "Standard 2-vCPU x86 Ubuntu VM, based on a D4as_v4"
+        "value": 4.315,
+        "description": "Standard 2-vCPU x86 Ubuntu VM, based on a D4as_v4 from Azure"
       },
-      "ubuntu-arm": {
-        "value": 45,
-        "description": "2-vCPU ARM64 Ubuntu VM (more efficient)"
+      "ubuntu-slim": {
+        "value": 1.078,
+        "description": "Quarter of a standard"
       },
       "windows": {
-        "value": 75,
+        "value": 4.746,
         "description": "Standard 2-vCPU x86 Windows VM (higher due to OS overhead)"
       },
+      "ubuntu-arm": {
+        "value": 2.157,
+        "description": "2-vCPU ARM64 Ubuntu VM (more efficient), based on coparm1-4c-16g instance from Scaleway"
+      },
       "windows-arm": {
-        "value": 55,
+        "value": 2.372,
         "description": "2-vCPU ARM64 Windows VM"
       },
       "macos": {
-        "value": 40,
-        "description": "Apple Silicon M-series (3-vCPU, very efficient)"
+        "value": -1,
+        "description": "Apple Silicon M-series (3-vCPU, very efficient) - TODO find estimates"
       },
       "macos-13": {
-        "value": 85,
-        "description": "Intel-based macOS (older, less efficient)"
+        "value": -1,
+        "description": "Intel-based macOS (older, less efficient) - TODO find estimates"
       }
     }
   },
