@@ -8,13 +8,11 @@ Ginkgo helps organizations understand and track the carbon footprint of their Gi
 For measuring carbon emissions per workflow, look at [CarbonCi](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
 The billing data can be retrieved using the [GitHub API](https://docs.github.com/en/rest/billing/usage?apiVersion=2022-11-28#get-billing-usage-report-for-an-organization).
 
-Named after the ancient Ginkgo tree, one of the world's oldest living tree species and a symbol of resilience and sustainability.
-
 ## Features
 
-- Fetches GitHub Actions billing data (minutes used across all runners)
-- Calculates estimated carbon emissions based on billed usage
-- Runs as a GitHub Action in your workflows or on the command line
+- Calculates estimated carbon emissions for GitHub Action based on billed usage
+- ~~Fetches GitHub Actions billing data~~ NOT YET
+- ~~Runs as a GitHub Action in your workflows or on the command line~~ NOT YET
 
 ## Build
 
@@ -47,7 +45,7 @@ gh api /organizations/your-org/settings/billing/usage | jq > gh_bill.json
 ./target/release/ginkgo --file gh_bill.json
 ```
 
-### From the GitHub API
+### Retrieve and enrich the usage reports from the GitHub API
 
 ```bash
 ./target/release/ginkgo --token ghp_... --organization your-org
