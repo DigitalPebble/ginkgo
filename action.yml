@@ -45,5 +45,5 @@ runs:
       run: echo "report-path=${{ inputs.output_path }}" >> "$GITHUB_OUTPUT"
 
 branding:
-  icon: 'leaf'
+  icon: 'download-cloud'
   color: 'green'
