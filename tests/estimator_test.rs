@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use ginkgo::estimator::calculate_carbon_impact;
 use ginkgo::model::ActionsBill;
 

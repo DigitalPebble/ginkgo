@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use ginkgo::config::Config;
 
 fn assert_close(label: &str, actual: f64, expected: f64) {

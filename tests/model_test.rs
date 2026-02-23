@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 use ginkgo::model::ActionsBill;
 
 fn load_test_json() -> &'static str {
