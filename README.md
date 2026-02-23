@@ -40,7 +40,7 @@ Options:
 
 ### From a local billing file
 
-With the *GH CLI* and *jq* installed:
+With the [GH CLI](https://cli.github.com/) and [jq](https://jqlang.org/) installed:
 
 ```bash
 gh api /organizations/your-org/settings/billing/usage | jq > gh_bill.json
