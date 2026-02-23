@@ -115,7 +115,7 @@ You can create a fine-grained personal access token with only the `billing:read`
 ## Carbon Estimation Methodology
 
 The energy consumption estimates are taken from [BoaviztAPI](https://github.com/Boavizta/boaviztapi), the carbon intensity factor
-is an average for the Azure regions from the [ElectricityMaps](https://app.electricitymaps.com/datasets) datasets for 2024.
+is an average for the US in 2024 from [Ember](https://ember-energy.org).
 The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for the datacentres in America in 2025.
 
 ## License

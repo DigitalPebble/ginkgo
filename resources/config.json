@@ -33,8 +33,8 @@
     }
   },
   "grid_carbon_intensity": {
-    "description": "US average carbon intensity in grams CO2e per kWh, ElectricityMaps dataset 2024",
-    "value": 352
+    "description": "US average carbon intensity in grams CO2e per kWh for 2024, from https://ember-energy.org/",
+    "value": 383
   },
   "pue": {
     "description": "Power Usage Effectiveness - ratio of total data center power to IT equipment power. Accounts for cooling, power distribution, and other overhead",

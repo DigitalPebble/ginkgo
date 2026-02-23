@@ -21,7 +21,7 @@ fn grid_carbon_intensity() {
     assert_close(
         "grid_carbon_intensity",
         Config::instance().grid_carbon_intensity,
-        352.0,
+        383.0,
     );
 }
 
