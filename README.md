@@ -14,6 +14,32 @@ The billing data can be retrieved using the [GitHub API](https://docs.github.com
 - ~~Fetches GitHub Actions billing data~~ NOT YET
 - ~~Runs as a GitHub Action in your workflows or on the command line~~ NOT YET
 
+## Output
+
+Ginkgo takes as input a JSON usage report and enriches it by adding two fields to the _usageItems_:
+* `energy_usage_wh`
+* `co2eq_g`
+
+Here is what an enriched _usageItem_ looks like
+
+```json
+{
+  "date": "2026-02-01T04:48:44Z",
+  "product": "actions",
+  "sku": "Actions Linux",
+  "quantity": 91,
+  "unitType": "Minutes",
+  "pricePerUnit": 0.006,
+  "grossAmount": 0.546,
+  "discountAmount": 0.546,
+  "netAmount": 0,
+  "organizationName": "DigitalPebble",
+  "repositoryName": "spruce",
+  "energy_usage_wh": 7.592,
+  "co2eq_g": 2.672
+}
+```
+
 ## Build
 
 Prerequisite: install a [Rust toolchain](https://rustup.rs/) locally.
@@ -43,9 +69,12 @@ Options:
 With the [GH CLI](https://cli.github.com/) and [jq](https://jqlang.org/) installed:
 
 ```bash
-gh api /organizations/your-org/settings/billing/usage | jq > gh_bill.json
+ORG=enter_org_here
+gh api /organizations/$ORG/settings/billing/usage | jq > gh_bill.json
 ginkgo --file gh_bill.json
 ```
+
+This will produce an enriched version of the usage reports in `./carbon-estimate.json`. You can specify a different output with `-O output_file`.
 
 ### Retrieve and enrich the usage reports from the GitHub API
 
