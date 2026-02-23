@@ -16,8 +16,10 @@ The billing data can be retrieved using the [GitHub API](https://docs.github.com
 
 ## Build
 
+Prerequisite: install a [Rust toolchain](https://rustup.rs/) locally.
+
 ```bash
-cargo build --release
+cargo install --path .
 ```
 
 ## CLI Usage
@@ -42,18 +44,23 @@ With the *GH CLI* and *jq* installed:
 
 ```bash
 gh api /organizations/your-org/settings/billing/usage | jq > gh_bill.json
-./target/release/ginkgo --file gh_bill.json
+ginkgo --file gh_bill.json
 ```
 
 ### Retrieve and enrich the usage reports from the GitHub API
 
+**WORK IN PROGRESS** you need to specify both the name of your organization and a token. 
+This can be done on the command line or as an environment variable.
+
 ```bash
-./target/release/ginkgo --token ghp_... --organization your-org
+ginkgo --token ghp_... --organization your-org
 ```
 
 The output is written to the path specified by `--output` (defaults to `./carbon-estimate.json`).
 
 ## GitHub Action Usage
+
+**WORK IN PROGRESS** 
 
 ```yaml
 - uses: DigitalPebble/ginkgo@main
