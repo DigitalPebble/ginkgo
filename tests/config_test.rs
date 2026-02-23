@@ -19,11 +19,12 @@ fn pue() {
 #[test]
 fn runner_power_consumption_contains_all_runners() {
     let runners = &Config::instance().runner_power_consumption;
-    assert_eq!(runners.len(), 6);
-    assert!((runners["ubuntu"] - 65.0).abs() < 1e-9);
-    assert!((runners["ubuntu-arm"] - 45.0).abs() < 1e-9);
-    assert!((runners["windows"] - 75.0).abs() < 1e-9);
-    assert!((runners["windows-arm"] - 55.0).abs() < 1e-9);
-    assert!((runners["macos"] - 40.0).abs() < 1e-9);
-    assert!((runners["macos-13"] - 85.0).abs() < 1e-9);
+    assert_eq!(runners.len(), 7);
+    assert!((runners["ubuntu"] - 4.315).abs() < 1e-9);
+    assert!((runners["ubuntu-slim"] - 1.078).abs() < 1e-9);
+    assert!((runners["ubuntu-arm"] - 2.157).abs() < 1e-9);
+    assert!((runners["windows"] - 4.746).abs() < 1e-9);
+    assert!((runners["windows-arm"] - 2.372).abs() < 1e-9);
+    assert!((runners["macos"] + 1.0).abs() < 1e-9);
+    assert!((runners["macos-13"] + 1.0).abs() < 1e-9);
 }
