@@ -25,7 +25,12 @@ struct Cli {
     organization: Option<String>,
 
     /// Path where the carbon estimate report will be saved
-    #[arg(short = 'O', long, env = "INPUT_OUTPUT_PATH", default_value = "./carbon-estimate.json")]
+    #[arg(
+        short = 'O',
+        long,
+        env = "INPUT_OUTPUT_PATH",
+        default_value = "./carbon-estimate.json"
+    )]
     output: String,
 }
 
@@ -38,11 +43,9 @@ fn main() -> Result<()> {
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     } else {
-        let token = cli
-            .token
-            .as_deref()
-            .filter(|s| !s.is_empty())
-            .context("GitHub token is required when not using --file (set --token or INPUT_GITHUB_TOKEN)")?;
+        let token = cli.token.as_deref().filter(|s| !s.is_empty()).context(
+            "GitHub token is required when not using --file (set --token or INPUT_GITHUB_TOKEN)",
+        )?;
         let organization = cli
             .organization
             .as_deref()
@@ -92,10 +95,11 @@ fn fetch_billing_usage(token: &str, organization: &str) -> Result<ActionsBill> {
     let status = response.status();
     if !status.is_success() {
         let body = response.text().unwrap_or_default();
-        let curl = headers.iter().fold(
-            format!("curl -s \"{}\"", url),
-            |acc, (k, v)| format!("{} -H \"{}: {}\"", acc, k, v.to_str().unwrap_or("?")),
-        );
+        let curl = headers
+            .iter()
+            .fold(format!("curl -s \"{}\"", url), |acc, (k, v)| {
+                format!("{} -H \"{}: {}\"", acc, k, v.to_str().unwrap_or("?"))
+            });
         bail!(
             "Failed to fetch Actions billing: {} - {}\n{}",
             status.as_u16(),

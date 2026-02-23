@@ -14,8 +14,7 @@ pub struct Config {
 
 impl Config {
     fn load() -> Self {
-        let root: Value = serde_json::from_str(CONFIG_JSON)
-            .expect("Failed to parse config.json");
+        let root: Value = serde_json::from_str(CONFIG_JSON).expect("Failed to parse config.json");
 
         let runners = root["power_consumption"]["runners"]
             .as_object()
@@ -31,9 +30,7 @@ impl Config {
             .as_f64()
             .expect("Missing grid_carbon_intensity");
 
-        let pue = root["pue"]["value"]
-            .as_f64()
-            .expect("Missing pue");
+        let pue = root["pue"]["value"].as_f64().expect("Missing pue");
 
         Config {
             runner_power_consumption,

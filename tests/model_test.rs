@@ -32,7 +32,11 @@ fn serialise_to_json() {
 
     assert_eq!(bill.usage_items.len(), round_tripped.usage_items.len());
 
-    for (original, restored) in bill.usage_items.iter().zip(round_tripped.usage_items.iter()) {
+    for (original, restored) in bill
+        .usage_items
+        .iter()
+        .zip(round_tripped.usage_items.iter())
+    {
         assert_eq!(original.date, restored.date);
         assert_eq!(original.sku, restored.sku);
         assert!((original.quantity - restored.quantity).abs() < 1e-9);
