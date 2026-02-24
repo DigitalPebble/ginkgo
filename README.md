@@ -1,11 +1,11 @@
-# 🌳 Ginkgo - GitHub Actions Carbon Estimator
+# Ginkgo - GitHub Actions Carbon Estimator
 
 Estimate the environmental impact of GitHub Actions for your entire organization.
 
 ## About
 
 Ginkgo helps organizations understand and track the carbon footprint of their GitHub Actions workflows by analyzing billing data and applying carbon estimation models.
-For measuring carbon emissions per workflow, look at [CarbonCi](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
+For measuring carbon emissions per workflow, look at [eco-ci-energy-estimation](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
 The billing data can be retrieved using the [GitHub API](https://docs.github.com/en/rest/billing/usage?apiVersion=2022-11-28#get-billing-usage-report-for-an-organization).
 
 ## Features
@@ -66,15 +66,32 @@ Options:
 
 ### From a local billing file
 
-With the [GH CLI](https://cli.github.com/) and [jq](https://jqlang.org/) installed:
+With the [GH CLI](https://cli.github.com/) installed:
 
 ```bash
 ORG=enter_org_here
-gh api /organizations/$ORG/settings/billing/usage | jq > gh_bill.json
+gh api /organizations/$ORG/settings/billing/usage > gh_bill.json
 ginkgo --file gh_bill.json
 ```
 
 This will produce an enriched version of the usage reports in `./carbon-estimate.json`. You can specify a different output with `-O output_file`.
+
+### As a filter (stdin → stdout)
+
+When called with no arguments, Ginkgo reads a billing JSON from stdin and writes the enriched result to stdout, making it easy to compose with other tools:
+
+```bash
+ORG=enter_org_here
+gh api /organizations/$ORG/settings/billing/usage | ginkgo
+```
+
+Or to save to a file:
+
+```bash
+gh api /organizations/$ORG/settings/billing/usage | ginkgo > carbon-estimate.json
+```
+
+Error messages are written to stderr; stdout contains only the JSON output.
 
 ### Retrieve and enrich the usage reports from the GitHub API
 
