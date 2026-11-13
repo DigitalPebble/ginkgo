@@ -56,12 +56,14 @@ Ginkgo - GitHub Actions Carbon Estimator
 Usage: ginkgo [OPTIONS]
 
 Options:
-  -f, --file <FILE>                  Path to a local billing JSON file (instead of fetching from GitHub API)
-  -t, --token <TOKEN>                GitHub token with organization Administration (read) permission [env: INPUT_GITHUB_TOKEN]
-  -o, --organization <ORGANIZATION>  GitHub organization name [env: INPUT_ORGANIZATION]
-  -O, --output <OUTPUT>              Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH] [default: ./carbon-estimate.json]
-  -h, --help                         Print help
-  -V, --version                      Print version
+  -f, --file <FILE>                    Path to a local billing JSON file (instead of fetching from GitHub API)
+  -t, --token <TOKEN>                  GitHub token with organization Administration (read) permission [env: INPUT_GITHUB_TOKEN=]
+  -o, --organization <ORGANIZATION>    GitHub organization name [env: INPUT_ORGANIZATION=]
+  -O, --output <OUTPUT>                Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH=] [default: ./carbon-estimate.json]
+      --summary <SUMMARY>              File to append a markdown summary to (set automatically by GitHub Actions) [env: GITHUB_STEP_SUMMARY=]
+      --github-output <GITHUB_OUTPUT>  File to append step outputs to (set automatically by GitHub Actions) [env: GITHUB_OUTPUT=]
+  -h, --help                           Print help
+  -V, --version                        Print version
 ```
 
 ### From a local billing file
