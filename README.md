@@ -11,7 +11,7 @@ The billing data can be retrieved using the [GitHub API](https://docs.github.com
 ## Features
 
 - Calculates estimated carbon emissions for GitHub Action based on billed usage
-- ~~Fetches GitHub Actions billing data~~ NOT YET
+- Fetches GitHub Actions billing data with a token and enriches it
 - ~~Runs as a GitHub Action in your workflows or on the command line~~ NOT YET
 
 ## Output
@@ -95,8 +95,8 @@ Error messages are written to stderr; stdout contains only the JSON output.
 
 ### Retrieve and enrich the usage reports from the GitHub API
 
-**WORK IN PROGRESS** you need to specify both the name of your organization and a token. 
-This can be done on the command line or as an environment variable.
+You need to specify both the name of your organization and a token. 
+This can be done on the command line or as an environment variable. See required permissions below.
 
 ```bash
 ginkgo --token ghp_... --organization your-org
