@@ -9,7 +9,7 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 use model::ActionsBill;
 use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::Path;
 
 /// Ginkgo - GitHub Actions Carbon Estimator
@@ -59,7 +59,15 @@ fn append_to_file(path: &str, content: &str) -> Result<()> {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let bill = if let Some(input_path) = &cli.file {
+    let filter_mode = cli.file.is_none() && cli.token.is_none() && cli.organization.is_none();
+
+    let bill = if filter_mode {
+        let mut input = String::new();
+        std::io::stdin()
+            .read_to_string(&mut input)
+            .context("Failed to read from stdin")?;
+        ActionsBill::from_json(&input)?
+    } else if let Some(input_path) = &cli.file {
         println!("Loading billing data from file: {}", input_path);
         let bill = ActionsBill::from_file(Path::new(input_path))?;
         println!("Loaded {} usage items", bill.usage_items.len());
@@ -80,14 +88,12 @@ fn main() -> Result<()> {
     };
 
     let mut bill = bill;
-    println!("Estimating carbon footprint...");
+    if !filter_mode {
+        println!("Estimating carbon footprint...");
+    }
     estimator::calculate_carbon_impact(&mut bill);
 
-    if let Some(parent) = Path::new(&cli.output).parent() {
-        fs::create_dir_all(parent)?;
-    }
     let json = bill.to_json()?;
-    fs::write(&cli.output, json)?;
 
     if let Some(path) = cli.summary.as_deref().filter(|s| !s.is_empty()) {
         append_to_file(path, &summary::to_markdown(&bill))?;
@@ -96,7 +102,16 @@ fn main() -> Result<()> {
         append_to_file(path, &summary::step_outputs(&bill))?;
     }
 
-    println!("Carbon estimate saved to: {}", cli.output);
+    if filter_mode {
+        println!("{}", json);
+    } else {
+        if let Some(parent) = Path::new(&cli.output).parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(&cli.output, &json)?;
+        println!("Carbon estimate saved to: {}", cli.output);
+    }
+
     Ok(())
 }
 
