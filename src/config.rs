@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 static CONFIG_JSON: &str = include_str!("../resources/config.json");
 
-pub static INSTANCE: Lazy<Config> = Lazy::new(|| Config::load());
+pub static INSTANCE: Lazy<Config> = Lazy::new(Config::load);
 
 pub struct Config {
     pub runner_power_consumption: HashMap<String, f64>,
