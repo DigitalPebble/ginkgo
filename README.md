@@ -105,6 +105,17 @@ The output is written to the path specified by `--output` (defaults to `./carbon
 | `organization` | Yes | - | GitHub organization name |
 | `output_path` | No | `carbon-estimate.json` | Path where the report will be saved |
 
+| Output | Description |
+|--------|-------------|
+| `report-path` | Path to the generated JSON report |
+| `total_co2eq_g` | Total estimated emissions (gCO2eq) |
+| `total_energy_wh` | Total estimated energy usage (Wh) |
+
+The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary.
+Outside of GitHub Actions, the CLI does the same when `GITHUB_STEP_SUMMARY` / `GITHUB_OUTPUT` are set (or with `--summary` / `--github-output`).
+
+The built-in `GITHUB_TOKEN` cannot read organization billing: store a token with billing access in a secret.
+
 ## Required Permissions
 
 The GitHub token must have:

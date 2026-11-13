@@ -18,6 +18,12 @@ outputs:
   report-path:
     description: 'Path to the generated carbon estimate report'
     value: ${{ steps.report.outputs.report-path }}
+  total_co2eq_g:
+    description: 'Total estimated emissions in grams of CO2 equivalent'
+    value: ${{ steps.ginkgo.outputs.total_co2eq_g }}
+  total_energy_wh:
+    description: 'Total estimated energy usage in watt-hours'
+    value: ${{ steps.ginkgo.outputs.total_energy_wh }}
 
 runs:
   using: 'composite'
@@ -29,20 +35,29 @@ runs:
 
     - name: Build ginkgo
       shell: bash
-      run: cargo build --release --manifest-path ${{ github.action_path }}/Cargo.toml
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+      run: cargo build --release --manifest-path "$ACTION_PATH/Cargo.toml"
 
+    # Inputs are passed through the environment, never interpolated into the
+    # script, to avoid script injection and to keep the token out of argv.
+    # The binary reads INPUT_* and appends to GITHUB_STEP_SUMMARY / GITHUB_OUTPUT.
     - name: Run ginkgo
+      id: ginkgo
       shell: bash
-      run: >
-        ${{ github.action_path }}/target/release/ginkgo
-        --token "${{ inputs.github_token }}"
-        --organization "${{ inputs.organization }}"
-        --output "${{ inputs.output_path }}"
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_ORGANIZATION: ${{ inputs.organization }}
+        INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
+      run: '"$ACTION_PATH/target/release/ginkgo"'
 
     - name: Set output
-      shell: bash
       id: report
-      run: echo "report-path=${{ inputs.output_path }}" >> "$GITHUB_OUTPUT"
+      shell: bash
+      env:
+        INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
+      run: echo "report-path=$INPUT_OUTPUT_PATH" >> "$GITHUB_OUTPUT"
 
 branding:
   icon: 'download-cloud'
