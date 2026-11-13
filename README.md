@@ -57,7 +57,7 @@ Usage: ginkgo [OPTIONS]
 
 Options:
   -f, --file <FILE>                  Path to a local billing JSON file (instead of fetching from GitHub API)
-  -t, --token <TOKEN>                GitHub token with billing:read permission [env: INPUT_GITHUB_TOKEN]
+  -t, --token <TOKEN>                GitHub token with organization Administration (read) permission [env: INPUT_GITHUB_TOKEN]
   -o, --organization <ORGANIZATION>  GitHub organization name [env: INPUT_ORGANIZATION]
   -O, --output <OUTPUT>              Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH] [default: ./carbon-estimate.json]
   -h, --help                         Print help
@@ -118,7 +118,7 @@ The output is written to the path specified by `--output` (defaults to `./carbon
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `github_token` | Yes | - | GitHub token with `billing:read` permission |
+| `github_token` | Yes | - | GitHub token with organization `Administration` (read) permission |
 | `organization` | Yes | - | GitHub organization name |
 | `output_path` | No | `carbon-estimate.json` | Path where the report will be saved |
 
@@ -136,9 +136,9 @@ The built-in `GITHUB_TOKEN` cannot read organization billing: store a token with
 ## Required Permissions
 
 The GitHub token must have:
-- `billing:read` - To access organization billing information
+- Organization permissions → `Administration` → Read-only, to access organization billing information
 
-You can create a fine-grained personal access token with only the `billing:read` permission scoped to your organization.
+You can create a fine-grained personal access token with only this permission. Its resource owner must be your organization (not your personal account), and the organization may need to approve it. The token's user must be an organization owner.
 
 ## Carbon Estimation Methodology
 

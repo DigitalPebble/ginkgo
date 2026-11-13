@@ -20,7 +20,7 @@ struct Cli {
     #[arg(short, long)]
     file: Option<String>,
 
-    /// GitHub token with billing:read permission
+    /// GitHub token with organization Administration (read) permission
     #[arg(short, long, env = "INPUT_GITHUB_TOKEN")]
     token: Option<String>,
 
