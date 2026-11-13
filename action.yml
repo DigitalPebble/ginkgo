@@ -4,7 +4,7 @@ author: 'DigitalPebble'
 
 inputs:
   github_token:
-    description: 'GitHub token with billing:read permission'
+    description: 'GitHub token with organization Administration (read) permission'
     required: true
   organization:
     description: 'GitHub organization name'
