@@ -3,12 +3,13 @@
 mod config;
 mod estimator;
 mod model;
+mod summary;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use model::ActionsBill;
-use std::fs;
-use std::io::Read;
+use std::fs::{self, OpenOptions};
+use std::io::{Read, Write};
 use std::path::Path;
 
 /// Ginkgo - GitHub Actions Carbon Estimator
@@ -35,6 +36,24 @@ struct Cli {
         default_value = "./carbon-estimate.json"
     )]
     output: String,
+
+    /// File to append a markdown summary to (set automatically by GitHub Actions)
+    #[arg(long, env = "GITHUB_STEP_SUMMARY")]
+    summary: Option<String>,
+
+    /// File to append step outputs to (set automatically by GitHub Actions)
+    #[arg(long, env = "GITHUB_OUTPUT")]
+    github_output: Option<String>,
+}
+
+fn append_to_file(path: &str, content: &str) -> Result<()> {
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .with_context(|| format!("Failed to open {}", path))?;
+    file.write_all(content.as_bytes())
+        .with_context(|| format!("Failed to write to {}", path))
 }
 
 fn main() -> Result<()> {
@@ -75,6 +94,13 @@ fn main() -> Result<()> {
     estimator::calculate_carbon_impact(&mut bill);
 
     let json = bill.to_json()?;
+
+    if let Some(path) = cli.summary.as_deref().filter(|s| !s.is_empty()) {
+        append_to_file(path, &summary::to_markdown(&bill))?;
+    }
+    if let Some(path) = cli.github_output.as_deref().filter(|s| !s.is_empty()) {
+        append_to_file(path, &summary::step_outputs(&bill))?;
+    }
 
     if filter_mode {
         println!("{}", json);
