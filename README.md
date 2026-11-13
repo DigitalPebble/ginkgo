@@ -137,6 +137,10 @@ The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustaina
 
 Storage (`Actions storage`, billed in `GigabyteHours`) is estimated from an SSD energy factor of 1.2 Wh per terabyte-hour, with the same PUE and carbon intensity applied. Items of that SKU with any other unit are ignored.
 
+## Releasing
+
+Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`, so `main` can stay protected. Once the PR is merged, the script tags `main`, which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then publishes a GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` checksum file.
+
 ## License
 
 Apache License 2.0
