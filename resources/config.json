@@ -32,6 +32,13 @@
       }
     }
   },
+  "storage_energy": {
+    "description": "Energy consumption of storage in Watt-hours per Terabyte-hour",
+    "ssd": {
+      "value": 1.2,
+      "description": "SSD storage"
+    }
+  },
   "grid_carbon_intensity": {
     "description": "US average carbon intensity in grams CO2e per kWh for 2024, from https://ember-energy.org/",
     "value": 383
