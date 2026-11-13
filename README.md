@@ -135,6 +135,8 @@ The energy consumption estimates are taken from [BoaviztAPI](https://github.com/
 is an average for the US in 2024 from [Ember](https://ember-energy.org).
 The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for the datacentres in America in 2025.
 
+Storage (`Actions storage`, billed in `GigabyteHours`) is estimated from an SSD energy factor of 1.2 Wh per terabyte-hour, with the same PUE and carbon intensity applied. Items of that SKU with any other unit are ignored.
+
 ## License
 
 Apache License 2.0

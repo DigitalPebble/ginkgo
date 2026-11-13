@@ -54,24 +54,47 @@ fn sets_energy_and_co2_on_minute_items() {
     }
 }
 
+const SSD_WH_PER_TB_HOUR: f64 = 1.2;
+
 #[test]
-fn skips_storage_items() {
+fn computes_correct_values_for_storage() {
     let mut bill = load_test_bill();
     calculate_carbon_impact(&mut bill);
 
+    let item = &bill.usage_items[0];
+    assert_eq!(item.sku, "Actions storage");
+    assert_eq!(item.unit_type, "GigabyteHours");
+
+    let energy_wh = SSD_WH_PER_TB_HOUR * (item.quantity / 1000.0) * PUE;
+    let co2_g = energy_wh / 1000.0 * GRID_INTENSITY;
+
+    assert_close(
+        "energy_usage_wh",
+        item.energy_usage_wh.expect("energy_usage_wh not set"),
+        (energy_wh * 1000.0).round() / 1000.0,
+    );
+    assert_close(
+        "co2eq_g",
+        item.co2eq_g.expect("co2eq_g not set"),
+        (co2_g * 1000.0).round() / 1000.0,
+    );
+}
+
+#[test]
+fn skips_storage_with_unexpected_unit() {
+    let json = r#"{"usageItems":[{"date":"2026-01-01T00:00:00Z","product":"actions",
+        "sku":"Actions storage","quantity":1000.0,"unitType":"Minutes","pricePerUnit":0.0,
+        "grossAmount":0.0,"discountAmount":0.0,"netAmount":0.0,
+        "organizationName":"o","repositoryName":"r"},
+        {"date":"2026-01-01T00:00:00Z","product":"actions",
+        "sku":"Actions storage","quantity":1000.0,"unitType":"Bytes","pricePerUnit":0.0,
+        "grossAmount":0.0,"discountAmount":0.0,"netAmount":0.0,
+        "organizationName":"o","repositoryName":"r"}]}"#;
+    let mut bill = ActionsBill::from_json(json).unwrap();
+    calculate_carbon_impact(&mut bill);
     for item in &bill.usage_items {
-        if item.unit_type == "GigabyteHours" {
-            assert!(
-                item.energy_usage_wh.is_none(),
-                "energy_usage_wh should not be set for {}",
-                item.sku
-            );
-            assert!(
-                item.co2eq_g.is_none(),
-                "co2eq_g should not be set for {}",
-                item.sku
-            );
-        }
+        assert!(item.energy_usage_wh.is_none());
+        assert!(item.co2eq_g.is_none());
     }
 }
 

@@ -10,6 +10,8 @@ pub static INSTANCE: Lazy<Config> = Lazy::new(|| Config::load());
 
 pub struct Config {
     pub runner_power_consumption: HashMap<String, f64>,
+    /// SSD storage energy in Wh per terabyte-hour
+    pub ssd_wh_per_tb_hour: f64,
     pub grid_carbon_intensity: f64,
     pub pue: f64,
 }
@@ -28,6 +30,10 @@ impl Config {
             runner_power_consumption.insert(key.clone(), watts);
         }
 
+        let ssd_wh_per_tb_hour = root["storage_energy"]["ssd"]["value"]
+            .as_f64()
+            .expect("Missing storage_energy.ssd");
+
         let grid_carbon_intensity = root["grid_carbon_intensity"]["value"]
             .as_f64()
             .expect("Missing grid_carbon_intensity");
@@ -36,6 +42,7 @@ impl Config {
 
         Config {
             runner_power_consumption,
+            ssd_wh_per_tb_hour,
             grid_carbon_intensity,
             pue,
         }
