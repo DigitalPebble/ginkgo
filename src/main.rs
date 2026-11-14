@@ -37,12 +37,12 @@ struct Cli {
     )]
     output: String,
 
-    /// File to append a markdown summary to (set automatically by GitHub Actions)
-    #[arg(long, env = "GITHUB_STEP_SUMMARY")]
+    /// File to append a markdown summary to (totals, per repository and per SKU)
+    #[arg(short, long, env = "GITHUB_STEP_SUMMARY")]
     summary: Option<String>,
 
     /// File to append step outputs to (set automatically by GitHub Actions)
-    #[arg(long, env = "GITHUB_OUTPUT")]
+    #[arg(long, env = "GITHUB_OUTPUT", hide = true)]
     github_output: Option<String>,
 }
 
