@@ -11,7 +11,7 @@ set_output() {
   echo "bin=$1" >> "${GITHUB_OUTPUT:-/dev/stdout}"
 }
 
-# Pinned to a release tag (uses: DigitalPebble/ginkgo@0.2.0) => matching binary.
+# Pinned to a release tag (uses: DigitalPebble/ginkgo@v0.3.0) => matching binary.
 if [ -z "$VERSION" ] && [[ "${ACTION_REF:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
   VERSION="$ACTION_REF"
 fi

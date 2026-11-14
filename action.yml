@@ -15,7 +15,7 @@ inputs:
     default: 'carbon-estimate.json'
   version:
     description: >-
-      Ginkgo release to download (e.g. 0.2.0, or "latest"). By default the release
+      Ginkgo release tag to download (e.g. v0.3.0, or "latest"). By default the release
       matching the action ref is used; other refs build from source.
     required: false
     default: ''
