@@ -13,6 +13,12 @@ inputs:
     description: 'Path where the carbon estimate report will be saved'
     required: false
     default: 'carbon-estimate.json'
+  version:
+    description: >-
+      Ginkgo release tag to download (e.g. v0.3.0, or "latest"). By default the release
+      matching the action ref is used; other refs build from source.
+    required: false
+    default: ''
 
 outputs:
   report-path:
@@ -28,12 +34,27 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    # Downloads and verifies the prebuilt binary; `bin` is empty when the
+    # binary has to be built from source (branch/SHA refs, unsupported runners).
+    - name: Install ginkgo
+      id: install
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        ACTION_REF: ${{ github.action_ref }}
+        ACTION_REPOSITORY: ${{ github.action_repository }}
+        INPUT_VERSION: ${{ inputs.version }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: bash "$ACTION_PATH/scripts/install-binary.sh"
+
     - name: Install Rust toolchain
+      if: steps.install.outputs.bin == ''
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
 
     - name: Build ginkgo
+      if: steps.install.outputs.bin == ''
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
@@ -47,10 +68,11 @@ runs:
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
+        GINKGO_BIN: ${{ steps.install.outputs.bin }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_ORGANIZATION: ${{ inputs.organization }}
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
-      run: '"$ACTION_PATH/target/release/ginkgo"'
+      run: '"${GINKGO_BIN:-$ACTION_PATH/target/release/ginkgo}"'
 
     - name: Set output
       id: report

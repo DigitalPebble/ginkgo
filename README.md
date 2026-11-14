@@ -12,7 +12,7 @@ The billing data can be retrieved using the [GitHub API](https://docs.github.com
 
 - Calculates estimated carbon emissions for GitHub Action based on billed usage
 - Fetches GitHub Actions billing data with a token and enriches it
-- ~~Runs as a GitHub Action in your workflows or on the command line~~ NOT YET
+- Runs as a GitHub Action in your workflows or on the command line
 
 ## Output
 
@@ -108,10 +108,10 @@ The output is written to the path specified by `--output` (defaults to `./carbon
 
 ## GitHub Action Usage
 
-**WORK IN PROGRESS** 
+Pin the action to a [release](https://github.com/DigitalPebble/ginkgo/releases) tag: the matching prebuilt binary is downloaded and its SHA-256 checksum verified, so there is no Rust toolchain to install and no build step.
 
 ```yaml
-- uses: DigitalPebble/ginkgo@main
+- uses: DigitalPebble/ginkgo@vX.Y.Z
   with:
     github_token: ${{ secrets.BILLING_TOKEN }}
     organization: your-org
@@ -123,6 +123,9 @@ The output is written to the path specified by `--output` (defaults to `./carbon
 | `github_token` | Yes | - | GitHub token with organization `Administration` (read) permission |
 | `organization` | Yes | - | GitHub organization name |
 | `output_path` | No | `carbon-estimate.json` | Path where the report will be saved |
+| `version` | No | the action's tag | Release tag to download, e.g. `v0.3.0` or `latest` |
+
+Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64). On other runners, or when the action is used from a branch or commit (`@main`, `uses: ./`), it is built from source instead, which is slower.
 
 | Output | Description |
 |--------|-------------|
@@ -152,7 +155,7 @@ Storage (`Actions storage`, billed in `GigabyteHours`) is estimated from an SSD 
 
 ## Releasing
 
-Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`, so `main` can stay protected. Once the PR is merged, the script tags `main`, which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then publishes a GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` checksum file.
+Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`, so `main` can stay protected. Once the PR is merged, the script tags `main` with `v<version>` (for example `v0.3.0`), which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then publishes a GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` checksum file.
 
 ## License
 

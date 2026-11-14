@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Releases ginkgo without pushing to main directly, so that main can be protected:
 #   1. opens a pull request on a release-<version> branch which sets the version in Cargo.toml
-#   2. once that PR is merged, tags the merge commit on main and pushes the tag
+#   2. once that PR is merged, tags the merge commit on main (v<version>) and pushes the tag
 # The tag triggers .github/workflows/release.yml, which builds the binaries
 # and publishes them with their SHA-256 checksums as GitHub release assets.
 
@@ -35,13 +35,17 @@ SUGGESTED="$MAJOR.$MINOR.$((PATCH + 1))"
 
 read -rp "Release version [$SUGGESTED]: " RELEASE_VERSION
 RELEASE_VERSION=${RELEASE_VERSION:-$SUGGESTED}
+# Accept "v0.3.0" as well: Cargo.toml holds 0.3.0, the git tag is always v0.3.0
+RELEASE_VERSION=${RELEASE_VERSION#v}
 
 if ! [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+].*)?$ ]]; then
   echo "'$RELEASE_VERSION' is not a valid version (expected X.Y.Z)"
   exit 1
 fi
-if git rev-parse -q --verify "refs/tags/$RELEASE_VERSION" >/dev/null; then
-  echo "Tag $RELEASE_VERSION already exists"
+TAG="v$RELEASE_VERSION"
+
+if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+  echo "Tag $TAG already exists"
   exit 1
 fi
 
@@ -50,6 +54,7 @@ BRANCH="release-$RELEASE_VERSION"
 echo ""
 echo "========================================="
 echo "  Release version : $RELEASE_VERSION"
+echo "  Git tag         : $TAG"
 echo "  Branch / PR     : $BRANCH"
 echo "========================================="
 read -rp "Proceed? [y/N]: " CONFIRM
@@ -91,13 +96,13 @@ if [ "$(current_version)" != "$RELEASE_VERSION" ]; then
   echo "Cargo.toml on main is at $(current_version), expected $RELEASE_VERSION"
   exit 1
 fi
-git tag -a "$RELEASE_VERSION" -m "Release $RELEASE_VERSION"
-git push origin "$RELEASE_VERSION"
+git tag -a "$TAG" -m "Release $RELEASE_VERSION"
+git push origin "$TAG"
 
 git branch -d "$BRANCH" 2>/dev/null || true
 git push origin --delete "$BRANCH" 2>/dev/null || true
 
 echo ""
-echo "Done! Tag $RELEASE_VERSION pushed."
+echo "Done! Tag $TAG pushed."
 echo "The release workflow is now building the binaries:"
 gh repo view --json url --jq '.url + "/actions/workflows/release.yml"'
