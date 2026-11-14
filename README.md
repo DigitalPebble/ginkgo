@@ -40,13 +40,32 @@ Here is what an enriched _usageItem_ looks like
 }
 ```
 
-## Build
+## Installation
 
-Prerequisite: install a [Rust toolchain](https://rustup.rs/) locally.
+### Prebuilt binaries (recommended)
+
+Download the archive for your platform from the [latest release](https://github.com/DigitalPebble/ginkgo/releases/latest). Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64).
+
+Assets are named `ginkgo-<tag>-<target>.tar.gz` (`.zip` on Windows), with a matching `.sha256` checksum file. For example on Linux x86_64:
 
 ```bash
+curl -LO https://github.com/DigitalPebble/ginkgo/releases/latest/download/ginkgo-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz
+tar xzf ginkgo-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz
+```
+
+Replace `vX.Y.Z` with the tag of the release, then put the `ginkgo` binary somewhere on your `PATH`.
+
+### Build from source
+
+As an alternative, or if no binary exists for your platform, build Ginkgo yourself. Prerequisite: install a [Rust toolchain](https://rustup.rs/).
+
+```bash
+git clone https://github.com/DigitalPebble/ginkgo.git
+cd ginkgo
 cargo install --path .
 ```
+
+This installs `ginkgo` into `~/.cargo/bin`. To only build it, run `cargo build --release`; the binary is then `target/release/ginkgo`.
 
 ## CLI Usage
 
@@ -60,11 +79,20 @@ Options:
   -t, --token <TOKEN>                  GitHub token with organization Administration (read) permission [env: INPUT_GITHUB_TOKEN=]
   -o, --organization <ORGANIZATION>    GitHub organization name [env: INPUT_ORGANIZATION=]
   -O, --output <OUTPUT>                Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH=] [default: ./carbon-estimate.json]
-      --summary <SUMMARY>              File to append a markdown summary to (set automatically by GitHub Actions) [env: GITHUB_STEP_SUMMARY=]
-      --github-output <GITHUB_OUTPUT>  File to append step outputs to (set automatically by GitHub Actions) [env: GITHUB_OUTPUT=]
+  -s, --summary <SUMMARY>              File to append a markdown summary to (totals, per repository and per SKU) [env: GITHUB_STEP_SUMMARY=]
   -h, --help                           Print help
   -V, --version                        Print version
 ```
+
+### Markdown summary
+
+Use `--summary` to also get a markdown report (totals, per repository and per runner SKU), handy outside of GitHub Actions too:
+
+```bash
+ginkgo --file gh_bill.json --summary summary.md
+```
+
+The report is appended to the file, which is created if needed.
 
 ### From a local billing file
 
@@ -87,7 +115,7 @@ ORG=enter_org_here
 gh api /organizations/$ORG/settings/billing/usage | ginkgo
 ```
 
-Or to save to a file:
+To save it to a file:
 
 ```bash
 gh api /organizations/$ORG/settings/billing/usage | ginkgo > carbon-estimate.json
@@ -134,7 +162,7 @@ Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows 
 | `total_energy_wh` | Total estimated energy usage (Wh) |
 
 The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary.
-Outside of GitHub Actions, the CLI does the same when `GITHUB_STEP_SUMMARY` / `GITHUB_OUTPUT` are set (or with `--summary` / `--github-output`).
+The CLI does the same whenever the runner's `GITHUB_STEP_SUMMARY` / `GITHUB_OUTPUT` environment variables are set. `GITHUB_OUTPUT` is read from the environment only; it has no documented flag.
 
 The built-in `GITHUB_TOKEN` cannot read organization billing: store a token with billing access in a secret.
 
