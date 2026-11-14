@@ -12,7 +12,7 @@ set_output() {
 }
 
 # Pinned to a release tag (uses: DigitalPebble/ginkgo@v0.3.0) => matching binary.
-if [ -z "$VERSION" ] && [[ "${ACTION_REF:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+if [ -z "$VERSION" ] && [[ "${ACTION_REF:-}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+ ]]; then
   VERSION="$ACTION_REF"
 fi
 
