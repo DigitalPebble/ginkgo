@@ -28,6 +28,10 @@ struct Cli {
     #[arg(short, long, env = "INPUT_ORGANIZATION")]
     organization: Option<String>,
 
+    /// Restrict the report to a single repository ("owner/name"); the organization is derived from it
+    #[arg(short, long, env = "INPUT_REPOSITORY")]
+    repository: Option<String>,
+
     /// Path where the carbon estimate report will be saved
     #[arg(
         short = 'O',
@@ -59,7 +63,20 @@ fn append_to_file(path: &str, content: &str) -> Result<()> {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let filter_mode = cli.file.is_none() && cli.token.is_none() && cli.organization.is_none();
+    let filter_mode = cli.file.is_none()
+        && cli.token.is_none()
+        && cli.organization.is_none()
+        && cli.repository.is_none();
+
+    let repo = match cli.repository.as_deref().filter(|s| !s.is_empty()) {
+        Some(r) => match r.split_once('/') {
+            Some((o, n)) if !o.is_empty() && !n.is_empty() && !n.contains('/') => {
+                Some((o.to_string(), n.to_string()))
+            }
+            _ => bail!("Repository must be in the form owner/name, got '{}'", r),
+        },
+        None => None,
+    };
 
     let bill = if filter_mode {
         let mut input = String::new();
@@ -76,10 +93,10 @@ fn main() -> Result<()> {
         let token = cli.token.as_deref().filter(|s| !s.is_empty()).context(
             "GitHub token is required when not using --file (set --token or INPUT_GITHUB_TOKEN)",
         )?;
-        let organization = cli
-            .organization
-            .as_deref()
-            .filter(|s| !s.is_empty())
+        let organization = repo
+            .as_ref()
+            .map(|(o, _)| o.as_str())
+            .or(cli.organization.as_deref().filter(|s| !s.is_empty()))
             .context("Organization is required when not using --file (set --organization or INPUT_ORGANIZATION)")?;
         println!("Fetching billing data for organization: {}", organization);
         let bill = fetch_billing_usage(token, organization)?;
@@ -88,6 +105,13 @@ fn main() -> Result<()> {
     };
 
     let mut bill = bill;
+    if let Some((owner, name)) = &repo {
+        bill.usage_items.retain(|i| {
+            i.repository_name.eq_ignore_ascii_case(name)
+                && i.organization_name.eq_ignore_ascii_case(owner)
+        });
+        println!("Kept {} usage items for {}/{}", bill.usage_items.len(), owner, name);
+    }
     if !filter_mode {
         println!("Estimating carbon footprint...");
     }

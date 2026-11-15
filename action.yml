@@ -1,13 +1,10 @@
 name: 'Ginkgo - GitHub Actions Carbon Estimator'
-description: 'Estimate the environmental impact of GitHub Actions for your organization'
+description: 'Estimate the environmental impact of GitHub Actions for the current repository'
 author: 'DigitalPebble'
 
 inputs:
   github_token:
     description: 'GitHub token with organization Administration (read) permission'
-    required: true
-  organization:
-    description: 'GitHub organization name'
     required: true
   output_path:
     description: 'Path where the carbon estimate report will be saved'
@@ -70,7 +67,7 @@ runs:
         ACTION_PATH: ${{ github.action_path }}
         GINKGO_BIN: ${{ steps.install.outputs.bin }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
-        INPUT_ORGANIZATION: ${{ inputs.organization }}
+        INPUT_REPOSITORY: ${{ github.repository }}
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
       run: '"${GINKGO_BIN:-$ACTION_PATH/target/release/ginkgo}"'
 
