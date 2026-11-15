@@ -49,6 +49,18 @@ struct Cli {
     #[arg(long, env = "INPUT_DAYS", default_value_t = 30)]
     days: u32,
 
+    /// Year of the billing usage report (billing source only; defaults to the current period)
+    #[arg(long, env = "INPUT_YEAR", value_parser = clap::value_parser!(u32).range(2000..=9999))]
+    year: Option<u32>,
+
+    /// Month (1-12) of the billing usage report (billing source only)
+    #[arg(long, env = "INPUT_MONTH", value_parser = clap::value_parser!(u32).range(1..=12))]
+    month: Option<u32>,
+
+    /// Day (1-31) of the billing usage report (billing source only)
+    #[arg(long, env = "INPUT_DAY", value_parser = clap::value_parser!(u32).range(1..=31))]
+    day: Option<u32>,
+
     /// Path where the carbon estimate report will be saved
     #[arg(
         short = 'O',
@@ -104,6 +116,9 @@ fn main() -> Result<()> {
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     } else if matches!(cli.source, Source::Jobs) {
+        if cli.year.is_some() || cli.month.is_some() || cli.day.is_some() {
+            bail!("--year, --month and --day are only supported with --source billing; use --days with --source jobs");
+        }
         let token = cli
             .token
             .as_deref()
@@ -126,7 +141,7 @@ fn main() -> Result<()> {
             .or(cli.organization.as_deref().filter(|s| !s.is_empty()))
             .context("Organization is required when not using --file (set --organization or INPUT_ORGANIZATION)")?;
         println!("Fetching billing data for organization: {}", organization);
-        let bill = fetch_billing_usage(token, organization)?;
+        let bill = fetch_billing_usage(token, organization, cli.year, cli.month, cli.day)?;
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     };
@@ -168,11 +183,24 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn fetch_billing_usage(token: &str, organization: &str) -> Result<ActionsBill> {
-    let url = format!(
+fn fetch_billing_usage(
+    token: &str,
+    organization: &str,
+    year: Option<u32>,
+    month: Option<u32>,
+    day: Option<u32>,
+) -> Result<ActionsBill> {
+    let mut url = format!(
         "https://api.github.com/organizations/{}/settings/billing/usage",
         organization
     );
+    let params: Vec<String> = [("year", year), ("month", month), ("day", day)]
+        .iter()
+        .filter_map(|(k, v)| v.map(|v| format!("{}={}", k, v)))
+        .collect();
+    if !params.is_empty() {
+        url = format!("{}?{}", url, params.join("&"));
+    }
 
     let client = reqwest::blocking::Client::new();
     let request = client
