@@ -50,7 +50,10 @@ fn markdown_for_empty_bill() {
     let bill = ActionsBill::from_json("{\"usageItems\":[]}").unwrap();
     let md = to_markdown(&bill);
     assert!(md.contains("No usage with an available estimate"));
-    assert_eq!(step_outputs(&bill), "total_co2eq_g=0.000\ntotal_energy_wh=0.000\n");
+    assert_eq!(
+        step_outputs(&bill),
+        "total_co2eq_g=0.000\ntotal_energy_wh=0.000\n"
+    );
 }
 
 #[test]

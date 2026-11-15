@@ -86,7 +86,11 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
             fmt_co2(total.co2eq_g)
         ));
 
-        md.push_str(&breakdown_table("Repository", &by_repo, Some(TOP_REPOSITORIES)));
+        md.push_str(&breakdown_table(
+            "Repository",
+            &by_repo,
+            Some(TOP_REPOSITORIES),
+        ));
         md.push_str(&breakdown_table("Runner SKU", &by_sku, None));
     }
 

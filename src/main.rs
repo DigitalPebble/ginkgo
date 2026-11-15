@@ -68,15 +68,12 @@ fn main() -> Result<()> {
         && cli.organization.is_none()
         && cli.repository.is_none();
 
-    let repo = match cli.repository.as_deref().filter(|s| !s.is_empty()) {
-        Some(r) => match r.split_once('/') {
-            Some((o, n)) if !o.is_empty() && !n.is_empty() && !n.contains('/') => {
-                Some((o.to_string(), n.to_string()))
-            }
-            _ => bail!("Repository must be in the form owner/name, got '{}'", r),
-        },
-        None => None,
-    };
+    let repo = cli
+        .repository
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .map(model::parse_repository)
+        .transpose()?;
 
     let bill = if filter_mode {
         let mut input = String::new();
@@ -106,11 +103,13 @@ fn main() -> Result<()> {
 
     let mut bill = bill;
     if let Some((owner, name)) = &repo {
-        bill.usage_items.retain(|i| {
-            i.repository_name.eq_ignore_ascii_case(name)
-                && i.organization_name.eq_ignore_ascii_case(owner)
-        });
-        println!("Kept {} usage items for {}/{}", bill.usage_items.len(), owner, name);
+        bill.retain_repository(owner, name);
+        println!(
+            "Kept {} usage items for {}/{}",
+            bill.usage_items.len(),
+            owner,
+            name
+        );
     }
     if !filter_mode {
         println!("Estimating carbon footprint...");

@@ -76,3 +76,63 @@ fn missing_usage_items_defaults_to_empty() {
     let bill = ActionsBill::from_json("{}").unwrap();
     assert!(bill.usage_items.is_empty());
 }
+
+mod repository_filter {
+    use ginkgo::model::{parse_repository, ActionsBill};
+
+    fn item(org: &str, repo: &str) -> String {
+        format!(
+            r#"{{"date":"2025-01-01","product":"actions","sku":"actions_linux","quantity":1.0,
+            "unitType":"minutes","pricePerUnit":0.0,"grossAmount":0.0,"discountAmount":0.0,
+            "netAmount":0.0,"organizationName":"{org}","repositoryName":"{repo}"}}"#
+        )
+    }
+
+    pub fn bill() -> String {
+        let items = [
+            item("DigitalPebble", "public-repo"),
+            item("DigitalPebble", "secret-repo"),
+            item("DigitalPebble", "secret-repo"),
+            item("OtherOrg", "public-repo"),
+        ];
+        format!(r#"{{"usageItems":[{}]}}"#, items.join(","))
+    }
+
+    #[test]
+    fn keeps_only_the_given_repository() {
+        let mut b = ActionsBill::from_json(&bill()).unwrap();
+        b.retain_repository("DigitalPebble", "public-repo");
+        assert_eq!(b.usage_items.len(), 1);
+        assert_eq!(b.usage_items[0].repository_name, "public-repo");
+        assert_eq!(b.usage_items[0].organization_name, "DigitalPebble");
+    }
+
+    #[test]
+    fn matching_is_case_insensitive() {
+        let mut b = ActionsBill::from_json(&bill()).unwrap();
+        b.retain_repository("digitalpebble", "PUBLIC-REPO");
+        assert_eq!(b.usage_items.len(), 1);
+    }
+
+    #[test]
+    fn unknown_repository_yields_nothing() {
+        let mut b = ActionsBill::from_json(&bill()).unwrap();
+        b.retain_repository("DigitalPebble", "public");
+        assert!(b.usage_items.is_empty());
+    }
+
+    #[test]
+    fn parses_owner_and_name() {
+        assert_eq!(
+            parse_repository("DigitalPebble/ginkgo").unwrap(),
+            ("DigitalPebble".to_string(), "ginkgo".to_string())
+        );
+    }
+
+    #[test]
+    fn rejects_malformed_repository() {
+        for bad in ["ginkgo", "/ginkgo", "owner/", "a/b/c", ""] {
+            assert!(parse_repository(bad).is_err(), "{bad} should be rejected");
+        }
+    }
+}
