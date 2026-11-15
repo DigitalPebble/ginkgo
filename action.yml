@@ -4,8 +4,21 @@ author: 'DigitalPebble'
 
 inputs:
   github_token:
-    description: 'GitHub token with organization Administration (read) permission'
-    required: true
+    description: >-
+      GitHub token. With the default `jobs` source the built-in token is enough (needs
+      `actions: read`). With the `billing` source it needs organization Administration (read).
+    required: false
+    default: ${{ github.token }}
+  source:
+    description: >-
+      Where the usage data comes from: `jobs` (workflow jobs of this repository) or
+      `billing` (organization billing API, filtered to this repository).
+    required: false
+    default: 'jobs'
+  days:
+    description: 'Number of days of workflow runs to analyse (jobs source only)'
+    required: false
+    default: '30'
   output_path:
     description: 'Path where the carbon estimate report will be saved'
     required: false
@@ -68,6 +81,8 @@ runs:
         GINKGO_BIN: ${{ steps.install.outputs.bin }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_REPOSITORY: ${{ github.repository }}
+        INPUT_SOURCE: ${{ inputs.source }}
+        INPUT_DAYS: ${{ inputs.days }}
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
       run: '"${GINKGO_BIN:-$ACTION_PATH/target/release/ginkgo}"'
 

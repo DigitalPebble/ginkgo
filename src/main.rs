@@ -2,6 +2,7 @@
 
 mod config;
 mod estimator;
+mod jobs;
 mod model;
 mod summary;
 
@@ -11,6 +12,14 @@ use model::ActionsBill;
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
+
+#[derive(Clone, Copy, clap::ValueEnum)]
+enum Source {
+    /// Organization billing API (needs organization Administration read)
+    Billing,
+    /// Jobs of the repository's workflow runs (needs only Actions read)
+    Jobs,
+}
 
 /// Ginkgo - GitHub Actions Carbon Estimator
 #[derive(Parser)]
@@ -31,6 +40,14 @@ struct Cli {
     /// Restrict the report to a single repository ("owner/name"); the organization is derived from it
     #[arg(short, long, env = "INPUT_REPOSITORY")]
     repository: Option<String>,
+
+    /// Where to get the usage data from: the organization billing API or the repository's workflow jobs
+    #[arg(long, env = "INPUT_SOURCE", value_enum, default_value = "billing")]
+    source: Source,
+
+    /// Number of days of workflow runs to analyse (jobs source only)
+    #[arg(long, env = "INPUT_DAYS", default_value_t = 30)]
+    days: u32,
 
     /// Path where the carbon estimate report will be saved
     #[arg(
@@ -84,6 +101,19 @@ fn main() -> Result<()> {
     } else if let Some(input_path) = &cli.file {
         println!("Loading billing data from file: {}", input_path);
         let bill = ActionsBill::from_file(Path::new(input_path))?;
+        println!("Loaded {} usage items", bill.usage_items.len());
+        bill
+    } else if matches!(cli.source, Source::Jobs) {
+        let token = cli
+            .token
+            .as_deref()
+            .filter(|s| !s.is_empty())
+            .context("GitHub token is required (set --token or INPUT_GITHUB_TOKEN)")?;
+        let (owner, name) = repo
+            .as_ref()
+            .context("--repository is required with --source jobs")?;
+        println!("Fetching workflow jobs for {}/{}", owner, name);
+        let bill = fetch_jobs_usage(token, owner, name, cli.days)?;
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     } else {
@@ -177,4 +207,79 @@ fn fetch_billing_usage(token: &str, organization: &str) -> Result<ActionsBill> {
 
     let body = response.text()?;
     ActionsBill::from_json(&body)
+}
+
+const MAX_RUN_PAGES: u32 = 50;
+
+fn get_json(client: &reqwest::blocking::Client, token: &str, url: &str) -> Result<String> {
+    let response = client
+        .get(url)
+        .header("Authorization", format!("Bearer {}", token))
+        .header("Accept", "application/vnd.github+json")
+        .header("X-GitHub-Api-Version", "2022-11-28")
+        .header("User-Agent", "Ginkgo")
+        .send()
+        .with_context(|| format!("Failed to send request to {}", url))?;
+    let status = response.status();
+    let body = response.text()?;
+    if !status.is_success() {
+        bail!(
+            "GitHub API request {} failed: {} - {}",
+            url,
+            status.as_u16(),
+            body
+        );
+    }
+    Ok(body)
+}
+
+fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<ActionsBill> {
+    #[derive(serde::Deserialize)]
+    struct Runs {
+        #[serde(default)]
+        workflow_runs: Vec<Run>,
+    }
+    #[derive(serde::Deserialize)]
+    struct Run {
+        id: u64,
+    }
+
+    let client = reqwest::blocking::Client::new();
+    let since = (chrono::Utc::now() - chrono::Duration::days(days as i64)).format("%Y-%m-%d");
+    let base = format!("https://api.github.com/repos/{}/{}/actions", owner, repo);
+    let mut bill = ActionsBill::default();
+
+    for page in 1..=MAX_RUN_PAGES {
+        let url = format!(
+            "{}/runs?status=completed&created=>={}&per_page=100&page={}",
+            base, since, page
+        );
+        let runs: Runs = serde_json::from_str(&get_json(&client, token, &url)?)?;
+        let count = runs.workflow_runs.len();
+        for run in runs.workflow_runs {
+            for jobs_page in 1.. {
+                let url = format!(
+                    "{}/runs/{}/jobs?filter=all&per_page=100&page={}",
+                    base, run.id, jobs_page
+                );
+                let body = get_json(&client, token, &url)?;
+                let items = jobs::items_from_jobs(&body, owner, repo)?;
+                let total: usize = serde_json::from_str::<serde_json::Value>(&body)?["jobs"]
+                    .as_array()
+                    .map_or(0, |a| a.len());
+                bill.usage_items.extend(items);
+                if total < 100 {
+                    break;
+                }
+            }
+        }
+        if count < 100 {
+            return Ok(bill);
+        }
+    }
+    eprintln!(
+        "Warning: stopped after {} pages of workflow runs; reduce --days for complete data",
+        MAX_RUN_PAGES
+    );
+    Ok(bill)
 }
