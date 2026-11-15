@@ -1,6 +1,6 @@
 # Ginkgo - GitHub Actions Carbon Estimator
 
-Estimate the environmental impact of GitHub Actions for your entire organization.
+Estimate the environmental impact of GitHub Actions for a repository, or for a whole organization.
 
 ## About
 
@@ -12,7 +12,67 @@ The billing data can be retrieved using the [GitHub API](https://docs.github.com
 
 - Calculates estimated carbon emissions for GitHub Action based on billed usage
 - Fetches GitHub Actions billing data with a token and enriches it
-- Runs as a GitHub Action in your workflows or on the command line
+- Runs as a GitHub Action scoped to the repository it is used in (most users)
+- Runs on the command line for organization-wide reports (administrators)
+
+## GitHub Action Usage (per repository)
+
+Pin the action to a [release](https://github.com/DigitalPebble/ginkgo/releases) tag: the matching prebuilt binary is downloaded and its SHA-256 checksum verified, so there is no Rust toolchain to install and no build step.
+
+```yaml
+- uses: DigitalPebble/ginkgo@vX.Y.Z
+  with:
+    github_token: ${{ secrets.BILLING_TOKEN }}
+    output_path: carbon-estimate.json  # optional
+```
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `github_token` | Yes | - | GitHub token with organization `Administration` (read) permission |
+| `output_path` | No | `carbon-estimate.json` | Path where the report will be saved |
+| `version` | No | the action's tag | Release tag to download, e.g. `v0.3.0` or `latest` |
+
+Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64). On other runners, or when the action is used from a branch or commit (`@main`, `uses: ./`), it is built from source instead, which is slower.
+
+| Output | Description |
+|--------|-------------|
+| `report-path` | Path to the generated JSON report |
+| `total_co2eq_g` | Total estimated emissions (gCO2eq) |
+| `total_energy_wh` | Total estimated energy usage (Wh) |
+
+The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary.
+The CLI does the same whenever the runner's `GITHUB_STEP_SUMMARY` / `GITHUB_OUTPUT` environment variables are set. `GITHUB_OUTPUT` is read from the environment only; it has no documented flag.
+
+The action only reports on the repository it runs in (`github.repository`): billing rows for all other repositories are discarded before anything is written to the report, the job summary or the outputs, so a public repository cannot expose data about private ones. The organization is taken from the repository owner. To report on a whole organization, use the CLI.
+
+The built-in `GITHUB_TOKEN` cannot read organization billing: store a token with billing access in a secret.
+
+## Security considerations
+
+**Read this before using the action, especially in a public repository.**
+
+GitHub only exposes billing data at organization level, so the token the action needs (organization `Administration` read) can read billing data for **every repository in your organization, including private ones**. Ginkgo mitigates this but cannot remove it:
+
+- The action only reports on the repository it runs in (`github.repository`). Rows for all other repositories are discarded before anything is written to the report, the job summary or the step outputs.
+- This filtering is done by Ginkgo **after** the API call. The token itself is not restricted to one repository.
+- Anyone who can modify the workflow (or the action reference) in that repository can make it run other code with access to the secret, and read the whole organization's billing data. Treat the token as an organization-wide credential.
+
+Recommendations:
+
+- Pin the action to a release tag or commit SHA, never a branch.
+- Store the token in an environment secret limited to protected branches, with required reviewers, rather than a plain repository secret.
+- Do not expose the secret to workflows triggered by pull requests from forks, and never use `pull_request_target` with it.
+- Restrict who can push to or modify workflows in the repository (branch protection, CODEOWNERS on `.github/workflows`).
+- Use a dedicated fine-grained token with only `Administration` (read), and rotate it regularly.
+- If the repository is public and you cannot guarantee the above, do not use the action there: run it from a private repository, or use the CLI locally.
+- The report, job summary and artifacts of a public repository are public: only the selected repository's data is written to them.
+
+## Required Permissions
+
+The GitHub token must have:
+- Organization permissions → `Administration` → Read-only, to access organization billing information
+
+You can create a fine-grained personal access token with only this permission. Its resource owner must be your organization (not your personal account), and the organization may need to approve it. The token's user must be an organization owner.
 
 ## Output
 
@@ -67,7 +127,9 @@ cargo install --path .
 
 This installs `ginkgo` into `~/.cargo/bin`. To only build it, run `cargo build --release`; the binary is then `target/release/ginkgo`.
 
-## CLI Usage
+## CLI Usage (organization-wide, for administrators)
+
+The CLI is meant for administrators running Ginkgo outside of a repository to get data for the **entire organization**. Without `--repository` nothing is filtered, so keep the output private.
 
 ```
 Ginkgo - GitHub Actions Carbon Estimator
@@ -77,6 +139,7 @@ Usage: ginkgo [OPTIONS]
 Options:
   -f, --file <FILE>                    Path to a local billing JSON file (instead of fetching from GitHub API)
   -t, --token <TOKEN>                  GitHub token with organization Administration (read) permission [env: INPUT_GITHUB_TOKEN=]
+  -r, --repository <REPOSITORY>        Restrict the report to a single repository ("owner/name"); the organization is derived from it [env: INPUT_REPOSITORY=]
   -o, --organization <ORGANIZATION>    GitHub organization name [env: INPUT_ORGANIZATION=]
   -O, --output <OUTPUT>                Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH=] [default: ./carbon-estimate.json]
   -s, --summary <SUMMARY>              File to append a markdown summary to (totals, per repository and per SKU) [env: GITHUB_STEP_SUMMARY=]
@@ -133,45 +196,6 @@ ginkgo --token ghp_... --organization your-org
 ```
 
 The output is written to the path specified by `--output` (defaults to `./carbon-estimate.json`).
-
-## GitHub Action Usage
-
-Pin the action to a [release](https://github.com/DigitalPebble/ginkgo/releases) tag: the matching prebuilt binary is downloaded and its SHA-256 checksum verified, so there is no Rust toolchain to install and no build step.
-
-```yaml
-- uses: DigitalPebble/ginkgo@vX.Y.Z
-  with:
-    github_token: ${{ secrets.BILLING_TOKEN }}
-    organization: your-org
-    output_path: carbon-estimate.json  # optional
-```
-
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `github_token` | Yes | - | GitHub token with organization `Administration` (read) permission |
-| `organization` | Yes | - | GitHub organization name |
-| `output_path` | No | `carbon-estimate.json` | Path where the report will be saved |
-| `version` | No | the action's tag | Release tag to download, e.g. `v0.3.0` or `latest` |
-
-Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64). On other runners, or when the action is used from a branch or commit (`@main`, `uses: ./`), it is built from source instead, which is slower.
-
-| Output | Description |
-|--------|-------------|
-| `report-path` | Path to the generated JSON report |
-| `total_co2eq_g` | Total estimated emissions (gCO2eq) |
-| `total_energy_wh` | Total estimated energy usage (Wh) |
-
-The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary.
-The CLI does the same whenever the runner's `GITHUB_STEP_SUMMARY` / `GITHUB_OUTPUT` environment variables are set. `GITHUB_OUTPUT` is read from the environment only; it has no documented flag.
-
-The built-in `GITHUB_TOKEN` cannot read organization billing: store a token with billing access in a secret.
-
-## Required Permissions
-
-The GitHub token must have:
-- Organization permissions → `Administration` → Read-only, to access organization billing information
-
-You can create a fine-grained personal access token with only this permission. Its resource owner must be your organization (not your personal account), and the organization may need to approve it. The token's user must be an organization owner.
 
 ## Carbon Estimation Methodology
 

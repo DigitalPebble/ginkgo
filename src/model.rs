@@ -33,7 +33,25 @@ pub struct ActionsBill {
     pub usage_items: Vec<UsageItem>,
 }
 
+/// Splits an `owner/name` repository reference.
+pub fn parse_repository(repo: &str) -> anyhow::Result<(String, String)> {
+    match repo.split_once('/') {
+        Some((o, n)) if !o.is_empty() && !n.is_empty() && !n.contains('/') => {
+            Ok((o.to_string(), n.to_string()))
+        }
+        _ => anyhow::bail!("Repository must be in the form owner/name, got '{}'", repo),
+    }
+}
+
 impl ActionsBill {
+    /// Keeps only the usage items of the given repository (case-insensitive).
+    pub fn retain_repository(&mut self, owner: &str, name: &str) {
+        self.usage_items.retain(|i| {
+            i.repository_name.eq_ignore_ascii_case(name)
+                && i.organization_name.eq_ignore_ascii_case(owner)
+        });
+    }
+
     pub fn from_json(json: &str) -> anyhow::Result<Self> {
         Ok(serde_json::from_str(json)?)
     }
