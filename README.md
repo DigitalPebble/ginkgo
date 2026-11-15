@@ -1,6 +1,6 @@
 # Ginkgo - GitHub Actions Carbon Estimator
 
-![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/ginkgo/badges/badge.json)
+[![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/ginkgo/badges/badge.json)](https://github.com/DigitalPebble/ginkgo)
 
 Estimate the environmental impact of GitHub Actions for a repository, or for a whole organization.
 
