@@ -76,3 +76,39 @@ fn formats_units() {
     assert_eq!(fmt_energy(5.0), "5.0 Wh");
     assert_eq!(fmt_energy(1500.0), "1.50 kWh");
 }
+
+#[test]
+fn badge_uses_shields_endpoint_format() {
+    use ginkgo::summary::{badge_json, BADGE_COLOR_BILLING, BADGE_COLOR_JOBS};
+
+    let bill = estimated_bill();
+    let grams = totals(&bill).co2eq_g;
+    assert!(grams < 1000.0);
+
+    let v: serde_json::Value =
+        serde_json::from_str(&badge_json(&bill, "30d", BADGE_COLOR_JOBS)).unwrap();
+    assert_eq!(v["schemaVersion"], 1);
+    assert_eq!(v["label"], "CI CO2eq (30d)");
+    assert_eq!(v["message"], format!("{:.1} gCO2e", grams));
+    assert_eq!(v["color"], "c0c0c0");
+
+    let v: serde_json::Value =
+        serde_json::from_str(&badge_json(&bill, "", BADGE_COLOR_BILLING)).unwrap();
+    assert_eq!(v["label"], "CI CO2eq");
+    assert_eq!(v["color"], "ffd700");
+}
+
+#[test]
+fn badge_switches_to_kilograms() {
+    use ginkgo::summary::badge_json;
+
+    let mut bill = estimated_bill();
+    bill.usage_items[0].energy_usage_wh = Some(1.0);
+    bill.usage_items[0].co2eq_g = Some(1500.0);
+    let others: f64 = bill.usage_items[1..].iter().filter_map(|i| i.co2eq_g).sum();
+    let v: serde_json::Value = serde_json::from_str(&badge_json(&bill, "30d", "c0c0c0")).unwrap();
+    assert_eq!(
+        v["message"],
+        format!("{:.2} kgCO2e", (1500.0 + others) / 1000.0)
+    );
+}

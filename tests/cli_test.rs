@@ -59,3 +59,29 @@ fn invalid_repository_fails() {
     assert!(report.is_empty());
     std::fs::remove_dir_all(&dir).ok();
 }
+
+#[test]
+fn badge_is_written_when_requested() {
+    let dir = std::env::temp_dir().join(format!("ginkgo-cli-badge-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let badge = dir.join("sub").join("badge.json");
+    let input = dir.join("bill.json");
+    std::fs::write(&input, r#"{"usageItems":[]}"#).unwrap();
+
+    let status = Command::new(env!("CARGO_BIN_EXE_ginkgo"))
+        .args(["--file", input.to_str().unwrap()])
+        .args(["-O", dir.join("out.json").to_str().unwrap()])
+        .args(["--badge", badge.to_str().unwrap()])
+        .env_remove("GITHUB_STEP_SUMMARY")
+        .env_remove("GITHUB_OUTPUT")
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let v: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&badge).unwrap()).unwrap();
+    assert_eq!(v["schemaVersion"], 1);
+    assert_eq!(v["message"], "0.0 gCO2e");
+    assert_eq!(v["color"], "ffd700"); // data read from a file is billing data: gold
+    std::fs::remove_dir_all(&dir).ok();
+}

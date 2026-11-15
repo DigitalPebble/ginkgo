@@ -23,6 +23,12 @@ inputs:
     description: 'Path where the carbon estimate report will be saved'
     required: false
     default: 'carbon-estimate.json'
+  badge_path:
+    description: >-
+      Path where a shields.io endpoint badge (JSON) with the total emissions will be written.
+      Silver with the `jobs` source, gold with the more accurate `billing` source. Empty to skip.
+    required: false
+    default: 'badge.json'
   version:
     description: >-
       Ginkgo release tag to download (e.g. v0.3.0, or "latest"). By default the release
@@ -34,6 +40,9 @@ outputs:
   report-path:
     description: 'Path to the generated carbon estimate report'
     value: ${{ steps.report.outputs.report-path }}
+  badge-path:
+    description: 'Path to the generated shields.io endpoint badge'
+    value: ${{ steps.report.outputs.badge-path }}
   total_co2eq_g:
     description: 'Total estimated emissions in grams of CO2 equivalent'
     value: ${{ steps.ginkgo.outputs.total_co2eq_g }}
@@ -84,6 +93,7 @@ runs:
         INPUT_SOURCE: ${{ inputs.source }}
         INPUT_DAYS: ${{ inputs.days }}
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
+        INPUT_BADGE_PATH: ${{ inputs.badge_path }}
       run: '"${GINKGO_BIN:-$ACTION_PATH/target/release/ginkgo}"'
 
     - name: Set output
@@ -91,7 +101,10 @@ runs:
       shell: bash
       env:
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
-      run: echo "report-path=$INPUT_OUTPUT_PATH" >> "$GITHUB_OUTPUT"
+        INPUT_BADGE_PATH: ${{ inputs.badge_path }}
+      run: |
+        echo "report-path=$INPUT_OUTPUT_PATH" >> "$GITHUB_OUTPUT"
+        echo "badge-path=$INPUT_BADGE_PATH" >> "$GITHUB_OUTPUT"
 
 branding:
   icon: 'download-cloud'

@@ -148,6 +148,34 @@ fn breakdown_table(label: &str, rows: &BTreeMap<&str, Totals>, limit: Option<usi
     out
 }
 
+/// Colour of the badge when the data comes from the jobs API (no key needed): less accurate.
+pub const BADGE_COLOR_JOBS: &str = "c0c0c0"; // silver
+/// Colour of the badge when the data comes from the billing API (key needed): more accurate.
+pub const BADGE_COLOR_BILLING: &str = "ffd700"; // gold
+
+/// Badge in the [shields.io endpoint](https://shields.io/badges/endpoint-badge) format.
+/// `period` (e.g. "30d") is added to the label when not empty.
+pub fn badge_json(bill: &ActionsBill, period: &str, color: &str) -> String {
+    let grams = totals(bill).co2eq_g;
+    let message = if grams >= 1000.0 {
+        format!("{:.2} kgCO2e", grams / 1000.0)
+    } else {
+        format!("{:.1} gCO2e", grams)
+    };
+    let label = if period.is_empty() {
+        "CI CO2eq".to_string()
+    } else {
+        format!("CI CO2eq ({})", period)
+    };
+    serde_json::json!({
+        "schemaVersion": 1,
+        "label": label,
+        "message": message,
+        "color": color,
+    })
+    .to_string()
+}
+
 pub fn fmt_co2(grams: f64) -> String {
     if grams >= 1000.0 {
         format!("{:.2} kg", grams / 1000.0)
