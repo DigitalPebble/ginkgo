@@ -108,8 +108,9 @@ fn main() -> Result<()> {
         .map(model::parse_repository)
         .transpose()?;
 
-    // The badge is gold when the data comes from the billing API (which needs a
-    // key with organization access) and silver otherwise, as it is less accurate.
+    // The badge is gold when the data is billing data (from the billing API, which
+    // needs a key with organization access, or from a file) and silver for the
+    // jobs source, which is less accurate.
     let mut badge_color = summary::BADGE_COLOR_JOBS;
     let mut badge_period = String::new();
 
@@ -123,6 +124,7 @@ fn main() -> Result<()> {
         println!("Loading billing data from file: {}", input_path);
         let bill = ActionsBill::from_file(Path::new(input_path))?;
         println!("Loaded {} usage items", bill.usage_items.len());
+        badge_color = summary::BADGE_COLOR_BILLING;
         bill
     } else if matches!(cli.source, Source::Jobs) {
         if cli.year.is_some() || cli.month.is_some() || cli.day.is_some() {

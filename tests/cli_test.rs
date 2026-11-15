@@ -82,5 +82,6 @@ fn badge_is_written_when_requested() {
         serde_json::from_str(&std::fs::read_to_string(&badge).unwrap()).unwrap();
     assert_eq!(v["schemaVersion"], 1);
     assert_eq!(v["message"], "0.0 gCO2e");
+    assert_eq!(v["color"], "ffd700"); // data read from a file is billing data: gold
     std::fs::remove_dir_all(&dir).ok();
 }
