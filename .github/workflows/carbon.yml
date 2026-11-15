@@ -1,0 +1,22 @@
+name: Carbon estimate
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+
+jobs:
+  estimate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # `uses: ./` is not a release tag, so the action is built from source here
+      - uses: ./
+        id: ginkgo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: carbon-estimate
+          path: ${{ steps.ginkgo.outputs.report-path }}
