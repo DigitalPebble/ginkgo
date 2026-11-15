@@ -1,5 +1,7 @@
 # Ginkgo - GitHub Actions Carbon Estimator
 
+[![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/ginkgo/badges/badge.json)](https://github.com/DigitalPebble/ginkgo)
+
 Estimate the environmental impact of GitHub Actions for a repository, or for a whole organization.
 
 ## About
@@ -94,10 +96,10 @@ steps:
       git push origin badges
 ```
 
-Then add this to your README (replace `OWNER/REPO`):
+Then add this to your README (replace `OWNER/REPO` with your repository: the badge file is specific to it, while the link always points to Ginkgo):
 
 ```markdown
-![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/badges/badge.json)
+[![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/badges/badge.json)](https://github.com/DigitalPebble/ginkgo)
 ```
 
 The figures are estimates and cover a rolling period, so the badge changes each time the workflow runs: a weekly schedule is usually enough. The badge only works for public repositories, as shields.io cannot read the `badges` branch of a private one. `contents: write` lets the job push to the repository, so keep this workflow restricted like any other that holds write access, and use `jobs` rather than `billing` unless you need the billed data.
