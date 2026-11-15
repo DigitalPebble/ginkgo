@@ -35,6 +35,7 @@ That is all: by default the action analyses the jobs of this repository's workfl
 | `github_token` | No | `${{ github.token }}` | With `jobs`: `actions: read` is enough. With `billing`: a token with organization `Administration` (read) permission |
 | `days` | No | `30` | Days of workflow runs to analyse (`jobs` source only) |
 | `output_path` | No | `carbon-estimate.json` | Path where the report will be saved |
+| `badge_path` | No | `badge.json` | Path where the [badge](#badge) JSON will be written (empty to skip) |
 | `version` | No | the action's tag | Release tag to download, e.g. `v0.3.0` or `latest` |
 
 Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64). On other runners, or when the action is used from a branch or commit (`@main`, `uses: ./`), it is built from source instead, which is slower.
@@ -42,6 +43,7 @@ Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows 
 | Output | Description |
 |--------|-------------|
 | `report-path` | Path to the generated JSON report |
+| `badge-path` | Path to the generated badge JSON |
 | `total_co2eq_g` | Total estimated emissions (gCO2eq) |
 | `total_energy_wh` | Total estimated energy usage (Wh) |
 
@@ -49,6 +51,56 @@ The action also adds a markdown report (totals, per repository and per runner SK
 The CLI does the same whenever the runner's `GITHUB_STEP_SUMMARY` / `GITHUB_OUTPUT` environment variables are set. `GITHUB_OUTPUT` is read from the environment only; it has no documented flag.
 
 The action only ever reports on the repository it runs in (`github.repository`). To report on a whole organization, use the CLI.
+
+### Badge
+
+The action writes a [shields.io endpoint](https://shields.io/badges/endpoint-badge) file (`badge.json` by default) with the estimated emissions over the analysed period:
+
+```json
+{"schemaVersion":1,"label":"CI CO2eq (30d)","message":"1.20 kgCO2e","color":"c0c0c0"}
+```
+
+The colour reflects how the data was obtained: **silver** with the `jobs` source (no key, runner types are inferred, less accurate) and **gold** with the `billing` source (key with organization access, data as billed). The label includes the period for the `jobs` source and for a `billing` report restricted with `--year`/`--month`/`--day`.
+
+To display it, publish the file at a public URL and point shields.io to it. The simplest way is a `badges` branch, which only needs the built-in token with `contents: write` (no extra secret):
+
+```yaml
+permissions:
+  actions: read
+  contents: write
+
+steps:
+  - uses: actions/checkout@v4
+  - uses: DigitalPebble/ginkgo@vX.Y.Z
+    id: ginkgo
+  - name: Publish badge
+    env:
+      BADGE_PATH: ${{ steps.ginkgo.outputs.badge-path }}
+    run: |
+      set -euo pipefail
+      cp "$BADGE_PATH" "$RUNNER_TEMP/badge.json"
+      git config user.name "github-actions[bot]"
+      git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      if git ls-remote --exit-code --heads origin badges >/dev/null; then
+        git fetch --depth=1 origin badges
+        git checkout -f -B badges FETCH_HEAD
+      else
+        git checkout --orphan badges
+        git rm -rf --quiet .
+      fi
+      cp "$RUNNER_TEMP/badge.json" badge.json
+      git add badge.json
+      git diff --cached --quiet || git commit -m "Update carbon badge"
+      git push origin badges
+```
+
+Then add this to your README (replace `OWNER/REPO`):
+
+```markdown
+![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/badges/badge.json)
+```
+
+The figures are estimates and cover a rolling period, so the badge changes each time the workflow runs: a weekly schedule is usually enough. The badge only works for public repositories, as shields.io cannot read the `badges` branch of a private one. `contents: write` lets the job push to the repository, so keep this workflow restricted like any other that holds write access, and use `jobs` rather than `billing` unless you need the billed data.
 
 ### Jobs source vs billing source
 
@@ -164,6 +216,7 @@ Options:
       --year <YEAR>                    Year of the billing report (billing source only) [env: INPUT_YEAR=]
       --month <MONTH>                  Month (1-12) of the billing report (billing source only) [env: INPUT_MONTH=]
       --day <DAY>                      Day (1-31) of the billing report (billing source only) [env: INPUT_DAY=]
+      --badge <BADGE>                  Path where a shields.io endpoint badge (JSON) will be written [env: INPUT_BADGE_PATH=]
   -r, --repository <REPOSITORY>        Restrict the report to a single repository ("owner/name"); the organization is derived from it [env: INPUT_REPOSITORY=]
   -o, --organization <ORGANIZATION>    GitHub organization name [env: INPUT_ORGANIZATION=]
   -O, --output <OUTPUT>                Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH=] [default: ./carbon-estimate.json]

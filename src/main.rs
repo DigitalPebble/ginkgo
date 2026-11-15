@@ -70,6 +70,10 @@ struct Cli {
     )]
     output: String,
 
+    /// Path where a shields.io endpoint badge (JSON) will be written
+    #[arg(long, env = "INPUT_BADGE_PATH")]
+    badge: Option<String>,
+
     /// File to append a markdown summary to (totals, per repository and per SKU)
     #[arg(short, long, env = "GITHUB_STEP_SUMMARY")]
     summary: Option<String>,
@@ -104,6 +108,11 @@ fn main() -> Result<()> {
         .map(model::parse_repository)
         .transpose()?;
 
+    // The badge is gold when the data comes from the billing API (which needs a
+    // key with organization access) and silver otherwise, as it is less accurate.
+    let mut badge_color = summary::BADGE_COLOR_JOBS;
+    let mut badge_period = String::new();
+
     let bill = if filter_mode {
         let mut input = String::new();
         std::io::stdin()
@@ -129,6 +138,7 @@ fn main() -> Result<()> {
             .context("--repository is required with --source jobs")?;
         println!("Fetching workflow jobs for {}/{}", owner, name);
         let bill = fetch_jobs_usage(token, owner, name, cli.days)?;
+        badge_period = format!("{}d", cli.days);
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     } else {
@@ -142,6 +152,13 @@ fn main() -> Result<()> {
             .context("Organization is required when not using --file (set --organization or INPUT_ORGANIZATION)")?;
         println!("Fetching billing data for organization: {}", organization);
         let bill = fetch_billing_usage(token, organization, cli.year, cli.month, cli.day)?;
+        badge_color = summary::BADGE_COLOR_BILLING;
+        badge_period = match (cli.year, cli.month, cli.day) {
+            (Some(y), Some(m), Some(d)) => format!("{y}-{m:02}-{d:02}"),
+            (Some(y), Some(m), None) => format!("{y}-{m:02}"),
+            (Some(y), None, None) => y.to_string(),
+            _ => String::new(),
+        };
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     };
@@ -178,6 +195,13 @@ fn main() -> Result<()> {
         }
         fs::write(&cli.output, &json)?;
         println!("Carbon estimate saved to: {}", cli.output);
+        if let Some(path) = cli.badge.as_deref().filter(|s| !s.is_empty()) {
+            if let Some(parent) = Path::new(path).parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::write(path, summary::badge_json(&bill, &badge_period, badge_color))?;
+            println!("Badge saved to: {}", path);
+        }
     }
 
     Ok(())

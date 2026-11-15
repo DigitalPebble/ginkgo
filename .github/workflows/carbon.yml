@@ -7,6 +7,7 @@ on:
 
 permissions:
   actions: read
+  contents: write # to publish the badge on the `badges` branch
 
 jobs:
   estimate:
@@ -20,3 +21,23 @@ jobs:
         with:
           name: carbon-estimate
           path: ${{ steps.ginkgo.outputs.report-path }}
+      # Only runs if the previous steps succeeded
+      - name: Publish badge
+        env:
+          BADGE_PATH: ${{ steps.ginkgo.outputs.badge-path }}
+        run: |
+          set -euo pipefail
+          cp "$BADGE_PATH" "$RUNNER_TEMP/badge.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin badges >/dev/null; then
+            git fetch --depth=1 origin badges
+            git checkout -f -B badges FETCH_HEAD
+          else
+            git checkout --orphan badges
+            git rm -rf --quiet .
+          fi
+          cp "$RUNNER_TEMP/badge.json" badge.json
+          git add badge.json
+          git diff --cached --quiet || git commit -m "Update carbon badge"
+          git push origin badges
