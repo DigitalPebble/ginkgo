@@ -38,6 +38,9 @@ fn get_runner_power(config: &Config, sku: &str) -> Option<f64> {
     let runner = match sku {
         "Actions Linux ARM" => "ubuntu-arm",
         "Actions Linux" => "ubuntu",
+        "Actions Linux Slim" => "ubuntu-slim",
+        "Actions Windows ARM" => "windows-arm",
+        "Actions Windows" => "windows",
         _ => return None,
     };
     config.runner_power_consumption.get(runner).copied()
