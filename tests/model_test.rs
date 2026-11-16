@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use ginkgo::model::ActionsBill;
+use aspen::model::ActionsBill;
 
 fn load_test_json() -> &'static str {
     include_str!("actions_bill.json")
@@ -51,7 +51,7 @@ fn serialise_to_json() {
 fn read_and_write_file() {
     let bill = ActionsBill::from_json(load_test_json()).unwrap();
 
-    let dir = std::env::temp_dir().join("ginkgo_test");
+    let dir = std::env::temp_dir().join("aspen_test");
     std::fs::create_dir_all(&dir).unwrap();
     let file = dir.join("output.json");
 
@@ -78,7 +78,7 @@ fn missing_usage_items_defaults_to_empty() {
 }
 
 mod repository_filter {
-    use ginkgo::model::{parse_repository, ActionsBill};
+    use aspen::model::{parse_repository, ActionsBill};
 
     fn item(org: &str, repo: &str) -> String {
         format!(
@@ -124,14 +124,14 @@ mod repository_filter {
     #[test]
     fn parses_owner_and_name() {
         assert_eq!(
-            parse_repository("DigitalPebble/ginkgo").unwrap(),
-            ("DigitalPebble".to_string(), "ginkgo".to_string())
+            parse_repository("DigitalPebble/aspen").unwrap(),
+            ("DigitalPebble".to_string(), "aspen".to_string())
         );
     }
 
     #[test]
     fn rejects_malformed_repository() {
-        for bad in ["ginkgo", "/ginkgo", "owner/", "a/b/c", ""] {
+        for bad in ["aspen", "/aspen", "owner/", "a/b/c", ""] {
             assert!(parse_repository(bad).is_err(), "{bad} should be rejected");
         }
     }

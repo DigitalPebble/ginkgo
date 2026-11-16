@@ -73,7 +73,7 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
     }
 
     let mut md = String::new();
-    md.push_str("## 🌳 Ginkgo - GitHub Actions carbon estimate\n\n");
+    md.push_str("## 🌳 Aspen - GitHub Actions carbon estimate\n\n");
 
     if by_repo.is_empty() {
         md.push_str("No usage with an available estimate was found.\n\n");
@@ -105,7 +105,7 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
     }
 
     md.push_str(
-        "<sub>Estimates by [Ginkgo](https://github.com/DigitalPebble/ginkgo) \
+        "<sub>Estimates by [Aspen](https://github.com/DigitalPebble/aspen) \
          based on billed minutes. Need help with GreenOps? \
          Get in touch with [DigitalPebble](https://digitalpebble.com/).</sub>\n",
     );

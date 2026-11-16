@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Aspen">
+  <title>Aspen</title>
+  <g>
+    <ellipse cx="44" cy="44" rx="17" ry="14" transform="rotate(-12 44 44)" fill="#B3BCC2"/>
+    <path d="M44 58 Q43 70 36 80" fill="none" stroke="#B3BCC2" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="74" cy="40" rx="20" ry="16" transform="rotate(-26 74 40)" fill="#17453A"/>
+    <path d="M74 56 Q74 70 66 84" fill="none" stroke="#17453A" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,12 +1,14 @@
-# Ginkgo - GitHub Actions Carbon Estimator
+<img src="resources/brand/aspen-icon.svg" width="96" alt="aspen">
 
-[![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/ginkgo/badges/badge.json)](https://github.com/DigitalPebble/ginkgo)
+# Aspen - GitHub Actions Carbon Estimator
+
+[![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge.json)](https://github.com/DigitalPebble/aspen)
 
 Estimate the environmental impact of GitHub Actions for a repository, or for a whole organization.
 
 ## About
 
-Ginkgo helps organizations understand and track the carbon footprint of their GitHub Actions workflows by analyzing billing data and applying carbon estimation models.
+Aspen helps organizations understand and track the carbon footprint of their GitHub Actions workflows by analyzing billing data and applying carbon estimation models.
 For measuring carbon emissions per workflow, look at [eco-ci-energy-estimation](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
 The billing data can be retrieved using the [GitHub API](https://docs.github.com/en/rest/billing/usage?apiVersion=2022-11-28#get-billing-usage-report-for-an-organization).
 
@@ -19,14 +21,14 @@ The billing data can be retrieved using the [GitHub API](https://docs.github.com
 
 ## GitHub Action Usage (per repository)
 
-Pin the action to a [release](https://github.com/DigitalPebble/ginkgo/releases) tag: the matching prebuilt binary is downloaded and its SHA-256 checksum verified, so there is no Rust toolchain to install and no build step.
+Pin the action to a [release](https://github.com/DigitalPebble/aspen/releases) tag: the matching prebuilt binary is downloaded and its SHA-256 checksum verified, so there is no Rust toolchain to install and no build step.
 
 ```yaml
 permissions:
   actions: read
 
 steps:
-  - uses: DigitalPebble/ginkgo@vX.Y.Z
+  - uses: DigitalPebble/aspen@vX.Y.Z
 ```
 
 That is all: by default the action analyses the jobs of this repository's workflow runs with the built-in `GITHUB_TOKEN`. No secret and no administrator access are needed.
@@ -73,11 +75,11 @@ permissions:
 
 steps:
   - uses: actions/checkout@v4
-  - uses: DigitalPebble/ginkgo@vX.Y.Z
-    id: ginkgo
+  - uses: DigitalPebble/aspen@vX.Y.Z
+    id: aspen
   - name: Publish badge
     env:
-      BADGE_PATH: ${{ steps.ginkgo.outputs.badge-path }}
+      BADGE_PATH: ${{ steps.aspen.outputs.badge-path }}
     run: |
       set -euo pipefail
       cp "$BADGE_PATH" "$RUNNER_TEMP/badge.json"
@@ -96,10 +98,10 @@ steps:
       git push origin badges
 ```
 
-Then add this to your README (replace `OWNER/REPO` with your repository: the badge file is specific to it, while the link always points to Ginkgo):
+Then add this to your README (replace `OWNER/REPO` with your repository: the badge file is specific to it, while the link always points to Aspen):
 
 ```markdown
-[![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/badges/badge.json)](https://github.com/DigitalPebble/ginkgo)
+[![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/badges/badge.json)](https://github.com/DigitalPebble/aspen)
 ```
 
 The figures are estimates and cover a rolling period, so the badge changes each time the workflow runs: a weekly schedule is usually enough. The badge only works for public repositories, as shields.io cannot read the `badges` branch of a private one. `contents: write` lets the job push to the repository, so keep this workflow restricted like any other that holds write access, and use `jobs` rather than `billing` unless you need the billed data.
@@ -127,10 +129,10 @@ The built-in `GITHUB_TOKEN` can only access the repository the workflow runs in,
 
 ### `billing` source: organization-wide credential
 
-GitHub only exposes billing data at organization level, so the token this source needs (organization `Administration` read) can read billing data for **every repository in your organization, including private ones**. Ginkgo mitigates this but cannot remove it:
+GitHub only exposes billing data at organization level, so the token this source needs (organization `Administration` read) can read billing data for **every repository in your organization, including private ones**. Aspen mitigates this but cannot remove it:
 
 - Rows for all repositories other than the current one are discarded before anything is written to the report, the job summary or the step outputs.
-- This filtering is done by Ginkgo **after** the API call. The token itself is not restricted to one repository.
+- This filtering is done by Aspen **after** the API call. The token itself is not restricted to one repository.
 - Anyone who can modify the workflow (or the action reference) in that repository can make it run other code with access to the secret, and read the whole organization's billing data. Treat the token as an organization-wide credential.
 
 Recommendations when using `billing`:
@@ -150,7 +152,7 @@ Recommendations when using `billing`:
 
 ## Output
 
-Ginkgo takes as input a JSON usage report and enriches it by adding two fields to the _usageItems_:
+Aspen takes as input a JSON usage report and enriches it by adding two fields to the _usageItems_:
 * `energy_usage_wh`
 * `co2eq_g`
 
@@ -178,37 +180,37 @@ Here is what an enriched _usageItem_ looks like
 
 ### Prebuilt binaries (recommended)
 
-Download the archive for your platform from the [latest release](https://github.com/DigitalPebble/ginkgo/releases/latest). Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64).
+Download the archive for your platform from the [latest release](https://github.com/DigitalPebble/aspen/releases/latest). Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64).
 
-Assets are named `ginkgo-<tag>-<target>.tar.gz` (`.zip` on Windows), with a matching `.sha256` checksum file. For example on Linux x86_64:
+Assets are named `aspen-<tag>-<target>.tar.gz` (`.zip` on Windows), with a matching `.sha256` checksum file. For example on Linux x86_64:
 
 ```bash
-curl -LO https://github.com/DigitalPebble/ginkgo/releases/latest/download/ginkgo-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz
-tar xzf ginkgo-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz
+curl -LO https://github.com/DigitalPebble/aspen/releases/latest/download/aspen-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz
+tar xzf aspen-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz
 ```
 
-Replace `vX.Y.Z` with the tag of the release, then put the `ginkgo` binary somewhere on your `PATH`.
+Replace `vX.Y.Z` with the tag of the release, then put the `aspen` binary somewhere on your `PATH`.
 
 ### Build from source
 
-As an alternative, or if no binary exists for your platform, build Ginkgo yourself. Prerequisite: install a [Rust toolchain](https://rustup.rs/).
+As an alternative, or if no binary exists for your platform, build Aspen yourself. Prerequisite: install a [Rust toolchain](https://rustup.rs/).
 
 ```bash
-git clone https://github.com/DigitalPebble/ginkgo.git
-cd ginkgo
+git clone https://github.com/DigitalPebble/aspen.git
+cd aspen
 cargo install --path .
 ```
 
-This installs `ginkgo` into `~/.cargo/bin`. To only build it, run `cargo build --release`; the binary is then `target/release/ginkgo`.
+This installs `aspen` into `~/.cargo/bin`. To only build it, run `cargo build --release`; the binary is then `target/release/aspen`.
 
 ## CLI Usage (organization-wide, for administrators)
 
-The CLI is meant for administrators running Ginkgo outside of a repository to get data for the **entire organization**. Without `--repository` nothing is filtered, so keep the output private.
+The CLI is meant for administrators running Aspen outside of a repository to get data for the **entire organization**. Without `--repository` nothing is filtered, so keep the output private.
 
 ```
-Ginkgo - GitHub Actions Carbon Estimator
+Aspen - GitHub Actions Carbon Estimator
 
-Usage: ginkgo [OPTIONS]
+Usage: aspen [OPTIONS]
 
 Options:
   -f, --file <FILE>                    Path to a local billing JSON file (instead of fetching from GitHub API)
@@ -232,7 +234,7 @@ Options:
 Use `--summary` to also get a markdown report (totals, per repository and per runner SKU), handy outside of GitHub Actions too:
 
 ```bash
-ginkgo --file gh_bill.json --summary summary.md
+aspen --file gh_bill.json --summary summary.md
 ```
 
 The report is appended to the file, which is created if needed.
@@ -244,24 +246,24 @@ With the [GH CLI](https://cli.github.com/) installed:
 ```bash
 ORG=enter_org_here
 gh api /organizations/$ORG/settings/billing/usage > gh_bill.json
-ginkgo --file gh_bill.json
+aspen --file gh_bill.json
 ```
 
 This will produce an enriched version of the usage reports in `./carbon-estimate.json`. You can specify a different output with `-O output_file`.
 
 ### As a filter (stdin → stdout)
 
-When called with no arguments, Ginkgo reads a billing JSON from stdin and writes the enriched result to stdout, making it easy to compose with other tools:
+When called with no arguments, Aspen reads a billing JSON from stdin and writes the enriched result to stdout, making it easy to compose with other tools:
 
 ```bash
 ORG=enter_org_here
-gh api /organizations/$ORG/settings/billing/usage | ginkgo
+gh api /organizations/$ORG/settings/billing/usage | aspen
 ```
 
 To save it to a file:
 
 ```bash
-gh api /organizations/$ORG/settings/billing/usage | ginkgo > carbon-estimate.json
+gh api /organizations/$ORG/settings/billing/usage | aspen > carbon-estimate.json
 ```
 
 Error messages are written to stderr; stdout contains only the JSON output.
@@ -272,13 +274,13 @@ You need to specify both the name of your organization and a token.
 This can be done on the command line or as an environment variable. See required permissions below.
 
 ```bash
-ginkgo --token ghp_... --organization your-org
+aspen --token ghp_... --organization your-org
 ```
 
 To analyse a single repository from its workflow jobs instead of the billing API (no administrator access needed):
 
 ```bash
-ginkgo --source jobs --repository your-org/your-repo --token ghp_... --days 30
+aspen --source jobs --repository your-org/your-repo --token ghp_... --days 30
 ```
 
 The output is written to the path specified by `--output` (defaults to `./carbon-estimate.json`).

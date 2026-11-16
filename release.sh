@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Releases ginkgo without pushing to main directly, so that main can be protected:
+# Releases aspen without pushing to main directly, so that main can be protected:
 #   1. opens a pull request on a release-<version> branch which sets the version in Cargo.toml
 #   2. once that PR is merged, tags the merge commit on main (v<version>) and pushes the tag
 # The tag triggers .github/workflows/release.yml, which builds the binaries

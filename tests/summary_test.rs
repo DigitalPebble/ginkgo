@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use ginkgo::estimator::calculate_carbon_impact;
-use ginkgo::model::ActionsBill;
-use ginkgo::summary::{fmt_co2, fmt_energy, step_outputs, to_markdown, totals};
+use aspen::estimator::calculate_carbon_impact;
+use aspen::model::ActionsBill;
+use aspen::summary::{fmt_co2, fmt_energy, step_outputs, to_markdown, totals};
 
 fn estimated_bill() -> ActionsBill {
     let mut bill = ActionsBill::from_json(include_str!("actions_bill.json")).unwrap();
@@ -39,7 +39,7 @@ fn step_outputs_contains_totals() {
 #[test]
 fn markdown_has_sections() {
     let md = to_markdown(&estimated_bill());
-    assert!(md.contains("Ginkgo"));
+    assert!(md.contains("Aspen"));
     assert!(md.contains("By repository"));
     assert!(md.contains("By runner sku"));
     assert!(md.contains("spruce"));
@@ -79,7 +79,7 @@ fn formats_units() {
 
 #[test]
 fn badge_uses_shields_endpoint_format() {
-    use ginkgo::summary::{badge_json, BADGE_COLOR_BILLING, BADGE_COLOR_JOBS};
+    use aspen::summary::{badge_json, BADGE_COLOR_BILLING, BADGE_COLOR_JOBS};
 
     let bill = estimated_bill();
     let grams = totals(&bill).co2eq_g;
@@ -100,7 +100,7 @@ fn badge_uses_shields_endpoint_format() {
 
 #[test]
 fn badge_switches_to_kilograms() {
-    use ginkgo::summary::badge_json;
+    use aspen::summary::badge_json;
 
     let mut bill = estimated_bill();
     bill.usage_items[0].energy_usage_wh = Some(1.0);

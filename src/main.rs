@@ -21,7 +21,7 @@ enum Source {
     Jobs,
 }
 
-/// Ginkgo - GitHub Actions Carbon Estimator
+/// Aspen - GitHub Actions Carbon Estimator
 #[derive(Parser)]
 #[command(version, about)]
 struct Cli {
@@ -234,7 +234,7 @@ fn fetch_billing_usage(
         .header("Authorization", format!("Bearer {}", token))
         .header("Accept", "application/vnd.github+json")
         .header("X-GitHub-Api-Version", "2022-11-28")
-        .header("User-Agent", format!("Ginkgo/{}", organization))
+        .header("User-Agent", format!("Aspen/{}", organization))
         .build()
         .context("Failed to build request")?;
 
@@ -271,7 +271,7 @@ fn get_json(client: &reqwest::blocking::Client, token: &str, url: &str) -> Resul
         .header("Authorization", format!("Bearer {}", token))
         .header("Accept", "application/vnd.github+json")
         .header("X-GitHub-Api-Version", "2022-11-28")
-        .header("User-Agent", "Ginkgo")
+        .header("User-Agent", "Aspen")
         .send()
         .with_context(|| format!("Failed to send request to {}", url))?;
     let status = response.status();

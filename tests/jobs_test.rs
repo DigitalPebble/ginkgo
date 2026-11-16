@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use ginkgo::estimator::calculate_carbon_impact;
-use ginkgo::jobs::{items_from_jobs, sku_for_labels};
-use ginkgo::model::ActionsBill;
+use aspen::estimator::calculate_carbon_impact;
+use aspen::jobs::{items_from_jobs, sku_for_labels};
+use aspen::model::ActionsBill;
 
 fn labels(l: &[&str]) -> Vec<String> {
     l.iter().map(|s| s.to_string()).collect()
@@ -38,7 +38,7 @@ fn maps_labels_to_billing_skus() {
 
 #[test]
 fn rounds_up_minutes_and_ignores_jobs_that_did_not_run() {
-    let items = items_from_jobs(JOBS, "DigitalPebble", "ginkgo").unwrap();
+    let items = items_from_jobs(JOBS, "DigitalPebble", "aspen").unwrap();
     assert_eq!(items.len(), 3);
     assert_eq!(items[0].sku, "Actions Linux");
     assert_eq!(items[0].quantity, 2.0); // 61s rounds up to 2 minutes
@@ -48,7 +48,7 @@ fn rounds_up_minutes_and_ignores_jobs_that_did_not_run() {
     assert_eq!(items[2].quantity, 1.0);
     assert!(items
         .iter()
-        .all(|i| i.organization_name == "DigitalPebble" && i.repository_name == "ginkgo"));
+        .all(|i| i.organization_name == "DigitalPebble" && i.repository_name == "aspen"));
 }
 
 #[test]
