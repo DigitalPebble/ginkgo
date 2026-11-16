@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use ginkgo::config::Config;
+use aspen::config::Config;
 
 fn assert_close(label: &str, actual: f64, expected: f64) {
     let diff = (actual - expected).abs();

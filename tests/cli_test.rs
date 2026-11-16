@@ -22,7 +22,7 @@ fn run(repository: &str, dir: &std::path::Path) -> (bool, String) {
     )
     .unwrap();
 
-    let status = Command::new(env!("CARGO_BIN_EXE_ginkgo"))
+    let status = Command::new(env!("CARGO_BIN_EXE_aspen"))
         .args([
             "--file",
             input.to_str().unwrap(),
@@ -41,7 +41,7 @@ fn run(repository: &str, dir: &std::path::Path) -> (bool, String) {
 
 #[test]
 fn report_only_contains_the_selected_repository() {
-    let dir = std::env::temp_dir().join(format!("ginkgo-cli-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("aspen-cli-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let (ok, report) = run("DigitalPebble/public-repo", &dir);
     assert!(ok);
@@ -52,7 +52,7 @@ fn report_only_contains_the_selected_repository() {
 
 #[test]
 fn invalid_repository_fails() {
-    let dir = std::env::temp_dir().join(format!("ginkgo-cli-bad-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("aspen-cli-bad-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let (ok, report) = run("not-a-repo", &dir);
     assert!(!ok);
@@ -62,13 +62,13 @@ fn invalid_repository_fails() {
 
 #[test]
 fn badge_is_written_when_requested() {
-    let dir = std::env::temp_dir().join(format!("ginkgo-cli-badge-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("aspen-cli-badge-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let badge = dir.join("sub").join("badge.json");
     let input = dir.join("bill.json");
     std::fs::write(&input, r#"{"usageItems":[]}"#).unwrap();
 
-    let status = Command::new(env!("CARGO_BIN_EXE_ginkgo"))
+    let status = Command::new(env!("CARGO_BIN_EXE_aspen"))
         .args(["--file", input.to_str().unwrap()])
         .args(["-O", dir.join("out.json").to_str().unwrap()])
         .args(["--badge", badge.to_str().unwrap()])

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use ginkgo::estimator::calculate_carbon_impact;
-use ginkgo::model::ActionsBill;
+use aspen::estimator::calculate_carbon_impact;
+use aspen::model::ActionsBill;
 
 // Constants matching resources/config.json
 const PUE: f64 = 1.16;

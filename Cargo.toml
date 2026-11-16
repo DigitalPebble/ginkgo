@@ -1,7 +1,10 @@
 [package]
-name = "ginkgo"
+name = "aspen"
 version = "0.3.0"
 edition = "2021"
+description = "Aspen - GitHub Actions Carbon Estimator"
+repository = "https://github.com/DigitalPebble/aspen"
+homepage = "https://github.com/DigitalPebble/aspen"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

@@ -1,6 +1,10 @@
-name: 'Ginkgo - GitHub Actions Carbon Estimator'
-description: 'Estimate the environmental impact of GitHub Actions for the current repository'
+name: 'Aspen - GitHub Actions Carbon Estimator'
+description: 'Estimate the environmental impact of GitHub Actions for a repository or an organisation.'
 author: 'DigitalPebble'
+
+branding:
+  icon: 'wind'
+  color: 'green'
 
 inputs:
   github_token:
@@ -31,7 +35,7 @@ inputs:
     default: 'badge.json'
   version:
     description: >-
-      Ginkgo release tag to download (e.g. v0.3.0, or "latest"). By default the release
+      Aspen release tag to download (e.g. v0.3.0, or "latest"). By default the release
       matching the action ref is used; other refs build from source.
     required: false
     default: ''
@@ -45,17 +49,17 @@ outputs:
     value: ${{ steps.report.outputs.badge-path }}
   total_co2eq_g:
     description: 'Total estimated emissions in grams of CO2 equivalent'
-    value: ${{ steps.ginkgo.outputs.total_co2eq_g }}
+    value: ${{ steps.aspen.outputs.total_co2eq_g }}
   total_energy_wh:
     description: 'Total estimated energy usage in watt-hours'
-    value: ${{ steps.ginkgo.outputs.total_energy_wh }}
+    value: ${{ steps.aspen.outputs.total_energy_wh }}
 
 runs:
   using: 'composite'
   steps:
     # Downloads and verifies the prebuilt binary; `bin` is empty when the
     # binary has to be built from source (branch/SHA refs, unsupported runners).
-    - name: Install ginkgo
+    - name: Install aspen
       id: install
       shell: bash
       env:
@@ -72,7 +76,7 @@ runs:
       with:
         toolchain: stable
 
-    - name: Build ginkgo
+    - name: Build aspen
       if: steps.install.outputs.bin == ''
       shell: bash
       env:
@@ -82,19 +86,19 @@ runs:
     # Inputs are passed through the environment, never interpolated into the
     # script, to avoid script injection and to keep the token out of argv.
     # The binary reads INPUT_* and appends to GITHUB_STEP_SUMMARY / GITHUB_OUTPUT.
-    - name: Run ginkgo
-      id: ginkgo
+    - name: Run aspen
+      id: aspen
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
-        GINKGO_BIN: ${{ steps.install.outputs.bin }}
+        ASPEN_BIN: ${{ steps.install.outputs.bin }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_REPOSITORY: ${{ github.repository }}
         INPUT_SOURCE: ${{ inputs.source }}
         INPUT_DAYS: ${{ inputs.days }}
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
         INPUT_BADGE_PATH: ${{ inputs.badge_path }}
-      run: '"${GINKGO_BIN:-$ACTION_PATH/target/release/ginkgo}"'
+      run: '"${ASPEN_BIN:-$ACTION_PATH/target/release/aspen}"'
 
     - name: Set output
       id: report

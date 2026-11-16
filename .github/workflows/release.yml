@@ -77,10 +77,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      # Uploads ginkgo-<tag>-<target>.tar.gz (.zip on Windows) and a .sha256 file
+      # Uploads aspen-<tag>-<target>.tar.gz (.zip on Windows) and a .sha256 file
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
-          bin: ginkgo
+          bin: aspen
           target: ${{ matrix.target }}
           archive: $bin-$tag-$target
           checksum: sha256

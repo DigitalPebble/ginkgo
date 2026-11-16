@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Downloads and verifies the prebuilt ginkgo binary matching the runner.
+# Downloads and verifies the prebuilt aspen binary matching the runner.
 # Writes `bin=<path>` to $GITHUB_OUTPUT, or an empty `bin=` when the action
 # should build from source instead (no release for this ref, unsupported runner).
 set -euo pipefail
 
-REPO="${ACTION_REPOSITORY:-DigitalPebble/ginkgo}"
+REPO="${ACTION_REPOSITORY:-DigitalPebble/aspen}"
 VERSION="${INPUT_VERSION:-}"
 
 set_output() {
   echo "bin=$1" >> "${GITHUB_OUTPUT:-/dev/stdout}"
 }
 
-# Pinned to a release tag (uses: DigitalPebble/ginkgo@v0.3.0) => matching binary.
+# Pinned to a release tag (uses: DigitalPebble/aspen@v0.3.0) => matching binary.
 if [ -z "$VERSION" ] && [[ "${ACTION_REF:-}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+ ]]; then
   VERSION="$ACTION_REF"
 fi
@@ -31,10 +31,10 @@ if [ "$VERSION" = "latest" ]; then
 fi
 
 case "${RUNNER_OS:-}-${RUNNER_ARCH:-}" in
-  Linux-X64)    TARGET=x86_64-unknown-linux-gnu;  EXT=tar.gz; EXE=ginkgo ;;
-  Linux-ARM64)  TARGET=aarch64-unknown-linux-gnu; EXT=tar.gz; EXE=ginkgo ;;
-  macOS-ARM64)  TARGET=aarch64-apple-darwin;      EXT=tar.gz; EXE=ginkgo ;;
-  Windows-X64)  TARGET=x86_64-pc-windows-msvc;    EXT=zip;    EXE=ginkgo.exe ;;
+  Linux-X64)    TARGET=x86_64-unknown-linux-gnu;  EXT=tar.gz; EXE=aspen ;;
+  Linux-ARM64)  TARGET=aarch64-unknown-linux-gnu; EXT=tar.gz; EXE=aspen ;;
+  macOS-ARM64)  TARGET=aarch64-apple-darwin;      EXT=tar.gz; EXE=aspen ;;
+  Windows-X64)  TARGET=x86_64-pc-windows-msvc;    EXT=zip;    EXE=aspen.exe ;;
   *)
     echo "::warning::No prebuilt binary for ${RUNNER_OS:-?}/${RUNNER_ARCH:-?}, building from source"
     set_output ""
@@ -42,15 +42,15 @@ case "${RUNNER_OS:-}-${RUNNER_ARCH:-}" in
     ;;
 esac
 
-ASSET="ginkgo-$VERSION-$TARGET.$EXT"
+ASSET="aspen-$VERSION-$TARGET.$EXT"
 URL="https://github.com/$REPO/releases/download/$VERSION"
-DEST="${RUNNER_TEMP:-/tmp}/ginkgo-$VERSION"
+DEST="${RUNNER_TEMP:-/tmp}/aspen-$VERSION"
 mkdir -p "$DEST"
 
 echo "Downloading $ASSET"
 curl -fsSL --retry 3 -o "$DEST/$ASSET" "$URL/$ASSET" \
   || { echo "::error::Could not download $URL/$ASSET"; exit 1; }
-curl -fsSL --retry 3 -o "$DEST/$ASSET.sha256" "$URL/ginkgo-$VERSION-$TARGET.sha256" \
+curl -fsSL --retry 3 -o "$DEST/$ASSET.sha256" "$URL/aspen-$VERSION-$TARGET.sha256" \
   || { echo "::error::Could not download the checksum for $ASSET"; exit 1; }
 
 EXPECTED=$(cut -d' ' -f1 "$DEST/$ASSET.sha256")

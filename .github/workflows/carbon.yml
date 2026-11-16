@@ -16,15 +16,15 @@ jobs:
       - uses: actions/checkout@v4
       # `uses: ./` is not a release tag, so the action is built from source here
       - uses: ./
-        id: ginkgo
+        id: aspen
       - uses: actions/upload-artifact@v4
         with:
           name: carbon-estimate
-          path: ${{ steps.ginkgo.outputs.report-path }}
+          path: ${{ steps.aspen.outputs.report-path }}
       # Only runs if the previous steps succeeded
       - name: Publish badge
         env:
-          BADGE_PATH: ${{ steps.ginkgo.outputs.badge-path }}
+          BADGE_PATH: ${{ steps.aspen.outputs.badge-path }}
         run: |
           set -euo pipefail
           cp "$BADGE_PATH" "$RUNNER_TEMP/badge.json"
