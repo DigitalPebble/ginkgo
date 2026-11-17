@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # `uses: ./` is not a release tag, so the action is built from source here
       - name: Aspen - GitHub Actions Carbon Estimator
+        id: aspen
         uses: DigitalPebble/aspen@v1.0.0
       - uses: actions/upload-artifact@v4
         with:
