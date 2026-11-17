@@ -68,3 +68,27 @@ fn empty_page_gives_no_items() {
         .unwrap()
         .is_empty());
 }
+
+#[test]
+fn summary_has_a_workflow_table_when_names_are_known() {
+    let mut bill = ActionsBill {
+        usage_items: items_from_jobs(JOBS, "DigitalPebble", "aspen").unwrap(),
+    };
+    assert!(!aspen::summary::to_markdown(&{
+        let mut b = bill.clone();
+        calculate_carbon_impact(&mut b);
+        b
+    })
+    .contains("By workflow"));
+
+    for item in &mut bill.usage_items {
+        item.workflow_name = Some("CI".to_string());
+        item.workflow_path = Some(".github/workflows/ci.yml".to_string());
+    }
+    calculate_carbon_impact(&mut bill);
+    let md = aspen::summary::to_markdown(&bill);
+    assert!(md.contains("By workflow"));
+    assert!(md.contains(
+        "[CI](https://github.com/DigitalPebble/aspen/blob/HEAD/.github/workflows/ci.yml)"
+    ));
+}

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::model::ActionsBill;
+use crate::model::{ActionsBill, UsageItem};
 use std::collections::BTreeMap;
 
 const TOP_REPOSITORIES: usize = 10;
@@ -46,11 +46,18 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
 
     let mut by_repo: BTreeMap<&str, Totals> = BTreeMap::new();
     let mut by_sku: BTreeMap<&str, Totals> = BTreeMap::new();
+    let mut by_workflow: BTreeMap<(String, String, String), Totals> = BTreeMap::new();
     let mut not_estimated: BTreeMap<&str, f64> = BTreeMap::new();
 
     for item in &bill.usage_items {
         match (item.energy_usage_wh, item.co2eq_g) {
             (Some(energy), Some(co2)) => {
+                if let Some(key) = workflow_key(item) {
+                    by_workflow
+                        .entry(key)
+                        .or_default()
+                        .add(energy, co2, item.quantity);
+                }
                 let repo = if item.repository_name.is_empty() {
                     "(none)"
                 } else {
@@ -91,6 +98,13 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
             &by_repo,
             Some(TOP_REPOSITORIES),
         ));
+        if !by_workflow.is_empty() {
+            let rows: BTreeMap<String, Totals> = by_workflow
+                .iter()
+                .map(|((repo, name, path), t)| (workflow_label(repo, name, path), t.clone()))
+                .collect();
+            md.push_str(&breakdown_table("Workflow", &rows, Some(TOP_REPOSITORIES)));
+        }
         md.push_str(&breakdown_table("Runner SKU", &by_sku, None));
     }
 
@@ -112,8 +126,42 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
     md
 }
 
-fn breakdown_table(label: &str, rows: &BTreeMap<&str, Totals>, limit: Option<usize>) -> String {
-    let mut sorted: Vec<(&&str, &Totals)> = rows.iter().collect();
+/// Workflows are grouped by file: (`owner/repo`, name, path). Items without a
+/// workflow path fall back to the name alone.
+fn workflow_key(item: &UsageItem) -> Option<(String, String, String)> {
+    let name = item.workflow_name.as_deref();
+    let path = item.workflow_path.as_deref();
+    let repo = if item.organization_name.is_empty() || item.repository_name.is_empty() {
+        String::new()
+    } else {
+        format!("{}/{}", item.organization_name, item.repository_name)
+    };
+    Some((
+        repo,
+        name.or(path)?.to_string(),
+        path.unwrap_or("").to_string(),
+    ))
+}
+
+/// Workflow name linked to its file in the repository, when the path is known.
+fn workflow_label(repo: &str, name: &str, path: &str) -> String {
+    let name = name.replace('|', "\\|");
+    if path.is_empty() || repo.is_empty() {
+        return name;
+    }
+    format!("[{}]({})", name, workflow_url(repo, path))
+}
+
+fn workflow_url(repo: &str, path: &str) -> String {
+    format!("https://github.com/{}/blob/HEAD/{}", repo, path)
+}
+
+fn breakdown_table<K: AsRef<str> + Ord>(
+    label: &str,
+    rows: &BTreeMap<K, Totals>,
+    limit: Option<usize>,
+) -> String {
+    let mut sorted: Vec<(&K, &Totals)> = rows.iter().collect();
     sorted.sort_by(|a, b| {
         b.1.co2eq_g
             .partial_cmp(&a.1.co2eq_g)
@@ -134,7 +182,7 @@ fn breakdown_table(label: &str, rows: &BTreeMap<&str, Totals>, limit: Option<usi
     for (name, t) in sorted.iter().take(shown) {
         out.push_str(&format!(
             "| {} | {:.0} | {} | {} |\n",
-            name,
+            name.as_ref(),
             t.minutes,
             fmt_energy(t.energy_wh),
             fmt_co2(t.co2eq_g)

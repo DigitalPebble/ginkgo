@@ -13,7 +13,9 @@ It runs in three ways:
 2. [As a GitHub Action with the `billing` source](#2-github-action-with-the-billing-source): needs an organisation token, one repository.
 3. [As a CLI outside GitHub Actions](#3-cli-outside-github-actions): the whole organisation.
 
-For per workflow measurements, look at [eco-ci-energy-estimation](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
+Aspen estimates emissions from job durations and runner types; it does not measure energy on the runner. If you need measured, per-step energy figures, look at [eco-ci-energy-estimation](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
+
+> 💡 **Did you know?** Aspens are among the largest living organisms on Earth. A famous quaking aspen grove in Utah called Pando is a single clonal colony of about 47,000 stems. They all share one root system and are genetically identical. It is estimated to weigh around 6,000 tonnes, and parts of the root system may be thousands of years old.
 
 ## Jobs vs billing: precision and coverage
 
@@ -23,11 +25,12 @@ For per workflow measurements, look at [eco-ci-energy-estimation](https://github
 | Runner type | inferred from the job labels | from the billing SKU |
 | Self-hosted and larger runners | reported, but no estimate | as billed |
 | Storage | not included | included |
+| Per-workflow breakdown | yes, grouped by workflow file | no, the billing API does not expose workflows |
 | Period | last `days` days, at most 5,000 runs | any month or day, via `--year`, `--month`, `--day` |
 | Coverage | the repository the token belongs to | the whole organisation |
 | Token | built-in `GITHUB_TOKEN` | organisation `Administration` (read) |
 
-`jobs` is an approximation: durations are rounded up and runner types are guessed from labels such as `ubuntu-latest` or `windows-latest`. `billing` is the data GitHub invoices, so it is the more precise of the two and the only one covering storage and the whole organisation, at the cost of a powerful token.
+`jobs` is an approximation: durations are rounded up and runner types are guessed from labels such as `ubuntu-latest` or `windows-latest`. `billing` is the data GitHub invoices, so it is the more precise of the two and the only one covering storage and the whole organisation, at the cost of a powerful token. Only `jobs` can tell you which workflow the emissions come from.
 
 ## 1. GitHub Action with the `jobs` source
 
@@ -59,7 +62,7 @@ The action analyses the jobs of this repository's workflow runs with the built-i
 | `total_co2eq_g` | Total estimated emissions (gCO2eq) |
 | `total_energy_wh` | Total estimated energy usage (Wh) |
 
-The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary.
+The action also adds a markdown report (totals, per repository, per workflow and per runner SKU) to the job summary. The per-workflow table is only available with the `jobs` source: workflows are grouped by file, shown by name and linked to the file in the repository. Workflows sharing the same name in different files get separate rows.
 
 The JSON report is written to the runner and discarded when the job ends. To keep it, give the Aspen step an `id` and upload the report as an artifact:
 
@@ -226,7 +229,7 @@ Options:
   -r, --repository <REPOSITORY>        Restrict the report to a single repository ("owner/name"); the organization is derived from it [env: INPUT_REPOSITORY=]
   -o, --organization <ORGANIZATION>    GitHub organization name [env: INPUT_ORGANIZATION=]
   -O, --output <OUTPUT>                Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH=] [default: ./carbon-estimate.json]
-  -s, --summary <SUMMARY>              File to append a markdown summary to (totals, per repository and per SKU) [env: GITHUB_STEP_SUMMARY=]
+  -s, --summary <SUMMARY>              File to append a markdown summary to (totals, per repository, per workflow with `jobs`, and per SKU) [env: GITHUB_STEP_SUMMARY=]
   -h, --help                           Print help
   -V, --version                        Print version
 ```
@@ -252,6 +255,8 @@ Aspen adds two fields to each of the _usageItems_ of the usage report, `energy_u
   "co2eq_g": 2.672
 }
 ```
+
+With the `jobs` source, each item also carries `workflow_name` and `workflow_path` (e.g. `.github/workflows/ci.yml`). These keys are absent from `billing` reports.
 
 ## Methodology
 

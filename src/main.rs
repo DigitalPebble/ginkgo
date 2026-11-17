@@ -74,7 +74,7 @@ struct Cli {
     #[arg(long, env = "INPUT_BADGE_PATH")]
     badge: Option<String>,
 
-    /// File to append a markdown summary to (totals, per repository and per SKU)
+    /// File to append a markdown summary to (totals, per repository, per workflow with `jobs`, and per SKU)
     #[arg(short, long, env = "GITHUB_STEP_SUMMARY")]
     summary: Option<String>,
 
@@ -296,6 +296,8 @@ fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<A
     #[derive(serde::Deserialize)]
     struct Run {
         id: u64,
+        name: Option<String>,
+        path: Option<String>,
     }
 
     let client = reqwest::blocking::Client::new();
@@ -311,13 +313,23 @@ fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<A
         let runs: Runs = serde_json::from_str(&get_json(&client, token, &url)?)?;
         let count = runs.workflow_runs.len();
         for run in runs.workflow_runs {
+            // `path` can carry a ref suffix (`ci.yml@refs/heads/main`)
+            let path = run
+                .path
+                .as_deref()
+                .map(|p| p.split('@').next().unwrap_or(p).to_string());
+            let name = run.name.clone().or_else(|| path.clone());
             for jobs_page in 1.. {
                 let url = format!(
                     "{}/runs/{}/jobs?filter=all&per_page=100&page={}",
                     base, run.id, jobs_page
                 );
                 let body = get_json(&client, token, &url)?;
-                let items = jobs::items_from_jobs(&body, owner, repo)?;
+                let mut items = jobs::items_from_jobs(&body, owner, repo)?;
+                for item in &mut items {
+                    item.workflow_name = name.clone();
+                    item.workflow_path = path.clone();
+                }
                 let total: usize = serde_json::from_str::<serde_json::Value>(&body)?["jobs"]
                     .as_array()
                     .map_or(0, |a| a.len());
