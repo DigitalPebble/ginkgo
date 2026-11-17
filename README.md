@@ -4,69 +4,73 @@
 
 [![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge.json)](https://github.com/DigitalPebble/aspen)
 
-Estimate the environmental impact of GitHub Actions for a repository, or for a whole organization.
+Aspen estimates the energy use and carbon emissions of GitHub Actions for a repository or an organisation. It reads either the jobs of your workflow runs or the GitHub billing report, applies a carbon estimation model (see [Methodology](#methodology)) and writes a JSON report, a markdown summary and an optional badge.
 
-## About
+It runs in three ways:
 
-Aspen helps organizations understand and track the carbon footprint of their GitHub Actions workflows by analyzing billing data and applying carbon estimation models.
-For measuring carbon emissions per workflow, look at [eco-ci-energy-estimation](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
-The billing data can be retrieved using the [GitHub API](https://docs.github.com/en/rest/billing/usage?apiVersion=2022-11-28#get-billing-usage-report-for-an-organization).
+1. [As a GitHub Action with the `jobs` source](#1-github-action-with-the-jobs-source): no secret needed, one repository.
+2. [As a GitHub Action with the `billing` source](#2-github-action-with-the-billing-source): needs an organisation token, one repository.
+3. [As a CLI outside GitHub Actions](#3-cli-outside-github-actions): the whole organisation.
 
-## Features
+For per workflow measurements, look at [eco-ci-energy-estimation](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
 
-- Calculates estimated carbon emissions for GitHub Action based on billed usage
-- Fetches GitHub Actions billing data with a token and enriches it
-- Runs as a GitHub Action scoped to the repository it is used in (most users), with no secret needed
-- Runs on the command line for organization-wide reports (administrators)
+## Jobs vs billing: precision and coverage
 
-## GitHub Action Usage (per repository)
+| | `jobs` (default) | `billing` |
+|---|---|---|
+| Minutes | job duration rounded up to whole minutes | as billed |
+| Runner type | inferred from the job labels | from the billing SKU |
+| Self-hosted and larger runners | reported, but no estimate | as billed |
+| Storage | not included | included |
+| Period | last `days` days, at most 5,000 runs | any month or day, via `--year`, `--month`, `--day` |
+| Coverage | the repository the token belongs to | the whole organisation |
+| Token | built-in `GITHUB_TOKEN` | organisation `Administration` (read) |
 
-Pin the action to a [release](https://github.com/DigitalPebble/aspen/releases) tag: the matching prebuilt binary is downloaded and its SHA-256 checksum verified, so there is no Rust toolchain to install and no build step.
+`jobs` is an approximation: durations are rounded up and runner types are guessed from labels such as `ubuntu-latest` or `windows-latest`. `billing` is the data GitHub invoices, so it is the more precise of the two and the only one covering storage and the whole organisation, at the cost of a powerful token.
+
+## 1. GitHub Action with the `jobs` source
+
+Pin the action to a [release](https://github.com/DigitalPebble/aspen/releases) tag. The prebuilt binary is downloaded and its SHA-256 checksum verified, so there is no Rust toolchain and no build step.
 
 ```yaml
 permissions:
   actions: read
 
 steps:
-  - uses: DigitalPebble/aspen@vX.Y.Z
+  - uses: DigitalPebble/aspen@v1.0.0
 ```
 
-That is all: by default the action analyses the jobs of this repository's workflow runs with the built-in `GITHUB_TOKEN`. No secret and no administrator access are needed.
+The action analyses the jobs of this repository's workflow runs with the built-in `GITHUB_TOKEN`. The token can only see this repository, and the data it reads is already visible to anyone who can see its Actions runs, so the risk is low.
 
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `source` | No | `jobs` | `jobs` (workflow jobs of this repository) or `billing` (organization billing API, filtered to this repository) |
-| `github_token` | No | `${{ github.token }}` | With `jobs`: `actions: read` is enough. With `billing`: a token with organization `Administration` (read) permission |
-| `days` | No | `30` | Days of workflow runs to analyse (`jobs` source only) |
-| `output_path` | No | `carbon-estimate.json` | Path where the report will be saved |
-| `badge_path` | No | `badge.json` | Path where the [badge](#badge) JSON will be written (empty to skip) |
-| `version` | No | the action's tag | Release tag to download, e.g. `v0.3.0` or `latest` |
-
-Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64). On other runners, or when the action is used from a branch or commit (`@main`, `uses: ./`), it is built from source instead, which is slower.
+| Input | Default | Description |
+|-------|---------|-------------|
+| `source` | `jobs` | `jobs` or `billing` |
+| `github_token` | `${{ github.token }}` | With `jobs`, `actions: read` is enough. With `billing`, an organisation token (see step 2) |
+| `days` | `30` | Days of workflow runs to analyse (`jobs` only) |
+| `output_path` | `carbon-estimate.json` | Where the report is saved |
+| `badge_path` | `badge.json` | Where the badge JSON is written (empty to skip) |
+| `version` | the action's tag | Release to download, e.g. `v1.0.0` or `latest` |
 
 | Output | Description |
 |--------|-------------|
-| `report-path` | Path to the generated JSON report |
-| `badge-path` | Path to the generated badge JSON |
+| `report-path` | Path to the JSON report |
+| `badge-path` | Path to the badge JSON |
 | `total_co2eq_g` | Total estimated emissions (gCO2eq) |
 | `total_energy_wh` | Total estimated energy usage (Wh) |
 
-The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary.
-The CLI does the same whenever the runner's `GITHUB_STEP_SUMMARY` / `GITHUB_OUTPUT` environment variables are set. `GITHUB_OUTPUT` is read from the environment only; it has no documented flag.
+The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary. Binaries exist for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64). On other runners, or when the action is used from a branch or commit (`@main`, `uses: ./`), it is built from source, which is slower.
 
-The action only ever reports on the repository it runs in (`github.repository`). To report on a whole organization, use the CLI.
+### Add a badge
 
-### Badge
-
-The action writes a [shields.io endpoint](https://shields.io/badges/endpoint-badge) file (`badge.json` by default) with the estimated emissions over the analysed period:
+The action writes a [shields.io endpoint](https://shields.io/badges/endpoint-badge) file with the estimated emissions over the analysed period:
 
 ```json
 {"schemaVersion":1,"label":"CI CO2eq (30d)","message":"1.20 kgCO2e","color":"c0c0c0"}
 ```
 
-The colour reflects how the data was obtained: **silver** with the `jobs` source (no key, runner types are inferred, less accurate) and **gold** with the `billing` source (key with organization access, data as billed). The label includes the period for the `jobs` source and for a `billing` report restricted with `--year`/`--month`/`--day`.
+The colour shows how the data was obtained: **silver** for the `jobs` source (inferred) and **gold** for the `billing` source (as billed).
 
-To display it, publish the file at a public URL and point shields.io to it. The simplest way is a `badges` branch, which only needs the built-in token with `contents: write` (no extra secret):
+To display it, publish the file on a `badges` branch. This only needs the built-in token with `contents: write`:
 
 ```yaml
 permissions:
@@ -75,7 +79,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v4
-  - uses: DigitalPebble/aspen@vX.Y.Z
+  - uses: DigitalPebble/aspen@v1.0.0
     id: aspen
   - name: Publish badge
     env:
@@ -98,102 +102,64 @@ steps:
       git push origin badges
 ```
 
-Then add this to your README (replace `OWNER/REPO` with your repository: the badge file is specific to it, while the link always points to Aspen):
+Then add this to your README, replacing `OWNER/REPO` with your repository:
 
 ```markdown
 [![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/badges/badge.json)](https://github.com/DigitalPebble/aspen)
 ```
 
-The figures are estimates and cover a rolling period, so the badge changes each time the workflow runs: a weekly schedule is usually enough. The badge only works for public repositories, as shields.io cannot read the `badges` branch of a private one. `contents: write` lets the job push to the repository, so keep this workflow restricted like any other that holds write access, and use `jobs` rather than `billing` unless you need the billed data.
+The figures cover a rolling period, so a weekly schedule is usually enough. The badge only works for public repositories, as shields.io cannot read the `badges` branch of a private one. Keep this workflow restricted like any other with write access.
 
-### Jobs source vs billing source
+## 2. GitHub Action with the `billing` source
 
-| | `jobs` (default) | `billing` |
-|---|---|---|
-| Token | built-in `GITHUB_TOKEN`, `actions: read` | secret with organization `Administration` (read) |
-| Can the token see other repositories? | No | **Yes, the whole organization** |
-| Minutes | job duration rounded up to whole minutes | as billed |
-| Runner type | inferred from the job's labels | from the billing SKU |
-| Storage usage | not available | included |
-| API usage | one request per workflow run (the `GITHUB_TOKEN` limit is 1,000 requests per hour per repository) | one request |
+Set `source: billing` and pass an organisation token:
 
-With the `jobs` source, a runner type is inferred from the labels (`ubuntu-latest`, `ubuntu-24.04-arm`, `windows-latest`...). Self-hosted runners and custom or larger runner labels appear in the report under their own SKU but get no estimate. Only the last `days` days of completed runs are read, and at most 5,000 runs.
+```yaml
+steps:
+  - uses: DigitalPebble/aspen@v1.0.0
+    with:
+      source: billing
+      github_token: ${{ secrets.ORG_BILLING_TOKEN }}
+```
 
-## Security considerations
+### Token requirements
 
-**Read this before using the action, especially in a public repository.**
+Organisation permissions → `Administration` → Read-only. Create a fine-grained personal access token with only this permission. Its resource owner must be your organisation (not your personal account), the organisation may need to approve it, and the token's user must be an organisation owner.
 
-### Default (`jobs` source): low risk
+### Security considerations
 
-The built-in `GITHUB_TOKEN` can only access the repository the workflow runs in, and the job data it reads is already visible to anyone who can see that repository's Actions runs. Nothing about other repositories can leak, even from a public repository. Grant only `permissions: actions: read`.
+**Read this before using `billing`, especially in a public repository.**
 
-### `billing` source: organization-wide credential
+GitHub only exposes billing data at organisation level, so this token can read billing data for **every repository in your organisation, including private ones**. Aspen mitigates this but cannot remove it:
 
-GitHub only exposes billing data at organization level, so the token this source needs (organization `Administration` read) can read billing data for **every repository in your organization, including private ones**. Aspen mitigates this but cannot remove it:
+- Rows for all other repositories are discarded before anything is written to the report, the job summary or the step outputs.
+- The filtering happens in Aspen **after** the API call. The token itself is not restricted to one repository.
+- Anyone who can modify the workflow or the action reference can run other code with access to the secret and read the whole organisation's billing data. Treat the token as an organisation-wide credential.
 
-- Rows for all repositories other than the current one are discarded before anything is written to the report, the job summary or the step outputs.
-- This filtering is done by Aspen **after** the API call. The token itself is not restricted to one repository.
-- Anyone who can modify the workflow (or the action reference) in that repository can make it run other code with access to the secret, and read the whole organization's billing data. Treat the token as an organization-wide credential.
-
-Recommendations when using `billing`:
+Recommendations:
 
 - Pin the action to a release tag or commit SHA, never a branch.
 - Store the token in an environment secret limited to protected branches, with required reviewers, rather than a plain repository secret.
 - Do not expose the secret to workflows triggered by pull requests from forks, and never use `pull_request_target` with it.
-- Restrict who can push to or modify workflows in the repository (branch protection, CODEOWNERS on `.github/workflows`).
+- Restrict who can push to or modify workflows (branch protection, CODEOWNERS on `.github/workflows`).
 - Use a dedicated fine-grained token with only `Administration` (read), and rotate it regularly.
-- If the repository is public and you cannot guarantee the above, do not use `billing` there: use the default `jobs` source, run it from a private repository, or use the CLI locally.
-- The report, job summary and artifacts of a public repository are public: only the selected repository's data is written to them.
+- In a public repository where you cannot guarantee the above, use the `jobs` source, run from a private repository, or use the CLI locally.
+- The report, job summary and artifacts of a public repository are public. Only the selected repository's data is written to them.
 
-## Required Permissions
+## 3. CLI outside GitHub Actions
 
-- `jobs` source: the workflow needs `permissions: actions: read`. With the CLI, a token with `Actions` → Read-only on the repository (fine-grained) or the `repo` scope.
-- `billing` source and organization-wide CLI use: Organization permissions → `Administration` → Read-only, to access organization billing information. You can create a fine-grained personal access token with only this permission. Its resource owner must be your organization (not your personal account), and the organization may need to approve it. The token's user must be an organization owner.
+The CLI is for administrators who want data for the **entire organisation**. Without `--repository` nothing is filtered, so keep the output private. It needs the same token as the `billing` source.
 
-## Output
+### Install
 
-Aspen takes as input a JSON usage report and enriches it by adding two fields to the _usageItems_:
-* `energy_usage_wh`
-* `co2eq_g`
-
-Here is what an enriched _usageItem_ looks like
-
-```json
-{
-  "date": "2026-02-01T04:48:44Z",
-  "product": "actions",
-  "sku": "Actions Linux",
-  "quantity": 91,
-  "unitType": "Minutes",
-  "pricePerUnit": 0.006,
-  "grossAmount": 0.546,
-  "discountAmount": 0.546,
-  "netAmount": 0,
-  "organizationName": "DigitalPebble",
-  "repositoryName": "spruce",
-  "energy_usage_wh": 7.592,
-  "co2eq_g": 2.672
-}
-```
-
-## Installation
-
-### Prebuilt binaries (recommended)
-
-Download the archive for your platform from the [latest release](https://github.com/DigitalPebble/aspen/releases/latest). Binaries are available for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64).
-
-Assets are named `aspen-<tag>-<target>.tar.gz` (`.zip` on Windows), with a matching `.sha256` checksum file. For example on Linux x86_64:
+Download the archive for your platform from the [latest release](https://github.com/DigitalPebble/aspen/releases/latest). Assets are named `aspen-<tag>-<target>.tar.gz` (`.zip` on Windows), each with a `.sha256` checksum file. On Linux x86_64:
 
 ```bash
-curl -LO https://github.com/DigitalPebble/aspen/releases/latest/download/aspen-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz
-tar xzf aspen-vX.Y.Z-x86_64-unknown-linux-gnu.tar.gz
+curl -LO https://github.com/DigitalPebble/aspen/releases/latest/download/aspen-v1.0.0-x86_64-unknown-linux-gnu.tar.gz
+tar xzf aspen-v1.0.0-x86_64-unknown-linux-gnu.tar.gz
 ```
 
-Replace `vX.Y.Z` with the tag of the release, then put the `aspen` binary somewhere on your `PATH`.
-
-### Build from source
-
-As an alternative, or if no binary exists for your platform, build Aspen yourself. Prerequisite: install a [Rust toolchain](https://rustup.rs/).
+Put the `aspen` binary somewhere on your `PATH`. To build from source instead, install a [Rust toolchain](https://rustup.rs/) and run:
 
 ```bash
 git clone https://github.com/DigitalPebble/aspen.git
@@ -201,11 +167,34 @@ cd aspen
 cargo install --path .
 ```
 
-This installs `aspen` into `~/.cargo/bin`. To only build it, run `cargo build --release`; the binary is then `target/release/aspen`.
+### Usage
 
-## CLI Usage (organization-wide, for administrators)
+Fetch the billing report of your organisation and enrich it:
 
-The CLI is meant for administrators running Aspen outside of a repository to get data for the **entire organization**. Without `--repository` nothing is filtered, so keep the output private.
+```bash
+aspen --token ghp_... --organization your-org
+```
+
+The output is written to `./carbon-estimate.json`, or to the path given with `--output`. Both values can also come from environment variables (see the options below).
+
+To use the jobs of a single repository instead, with no administrator access:
+
+```bash
+aspen --source jobs --repository your-org/your-repo --token ghp_... --days 30
+```
+
+To work from a saved billing file, using the [GH CLI](https://cli.github.com/):
+
+```bash
+gh api /organizations/$ORG/settings/billing/usage > gh_bill.json
+aspen --file gh_bill.json --summary summary.md
+```
+
+With no arguments, Aspen reads a billing JSON from stdin and writes the result to stdout. Errors go to stderr.
+
+```bash
+gh api /organizations/$ORG/settings/billing/usage | aspen > carbon-estimate.json
+```
 
 ```
 Aspen - GitHub Actions Carbon Estimator
@@ -229,78 +218,45 @@ Options:
   -V, --version                        Print version
 ```
 
-### Markdown summary
+## Output
 
-Use `--summary` to also get a markdown report (totals, per repository and per runner SKU), handy outside of GitHub Actions too:
+Aspen adds two fields to each of the _usageItems_ of the usage report, `energy_usage_wh` and `co2eq_g`:
 
-```bash
-aspen --file gh_bill.json --summary summary.md
+```json
+{
+  "date": "2026-02-01T04:48:44Z",
+  "product": "actions",
+  "sku": "Actions Linux",
+  "quantity": 91,
+  "unitType": "Minutes",
+  "pricePerUnit": 0.006,
+  "grossAmount": 0.546,
+  "discountAmount": 0.546,
+  "netAmount": 0,
+  "organizationName": "DigitalPebble",
+  "repositoryName": "spruce",
+  "energy_usage_wh": 7.592,
+  "co2eq_g": 2.672
+}
 ```
 
-The report is appended to the file, which is created if needed.
+## Methodology
 
-### From a local billing file
+Energy consumption estimates come from [BoaviztAPI](https://github.com/Boavizta/boaviztapi). The carbon intensity is an average for the US in 2024 from [Ember](https://ember-energy.org). The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for its datacentres in America in 2025.
 
-With the [GH CLI](https://cli.github.com/) installed:
-
-```bash
-ORG=enter_org_here
-gh api /organizations/$ORG/settings/billing/usage > gh_bill.json
-aspen --file gh_bill.json
-```
-
-This will produce an enriched version of the usage reports in `./carbon-estimate.json`. You can specify a different output with `-O output_file`.
-
-### As a filter (stdin → stdout)
-
-When called with no arguments, Aspen reads a billing JSON from stdin and writes the enriched result to stdout, making it easy to compose with other tools:
-
-```bash
-ORG=enter_org_here
-gh api /organizations/$ORG/settings/billing/usage | aspen
-```
-
-To save it to a file:
-
-```bash
-gh api /organizations/$ORG/settings/billing/usage | aspen > carbon-estimate.json
-```
-
-Error messages are written to stderr; stdout contains only the JSON output.
-
-### Retrieve and enrich the usage reports from the GitHub API
-
-You need to specify both the name of your organization and a token. 
-This can be done on the command line or as an environment variable. See required permissions below.
-
-```bash
-aspen --token ghp_... --organization your-org
-```
-
-To analyse a single repository from its workflow jobs instead of the billing API (no administrator access needed):
-
-```bash
-aspen --source jobs --repository your-org/your-repo --token ghp_... --days 30
-```
-
-The output is written to the path specified by `--output` (defaults to `./carbon-estimate.json`).
-
-## Carbon Estimation Methodology
-
-The energy consumption estimates are taken from [BoaviztAPI](https://github.com/Boavizta/boaviztapi), the carbon intensity factor
-is an average for the US in 2024 from [Ember](https://ember-energy.org).
-The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for the datacentres in America in 2025.
-
-Storage (`Actions storage`, billed in `GigabyteHours`) is estimated from an SSD energy factor of 1.2 Wh per terabyte-hour, with the same PUE and carbon intensity applied. Items of that SKU with any other unit are ignored.
+Storage (`Actions storage`, billed in `GigabyteHours`) uses an SSD energy factor of 1.2 Wh per terabyte hour, with the same PUE and carbon intensity. Items of that SKU with any other unit are ignored.
 
 ## Releasing
 
-Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`, so `main` can stay protected. Once the PR is merged, the script tags `main` with `v<version>` (for example `v0.3.0`), which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then publishes a GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` checksum file.
+Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`. Once merged, the script tags `main` with `v<version>`, which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then publishes a GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` file.
 
-## License
+## Licence
 
 Apache License 2.0
 
 ## Credits
 
-Developed by [DigitalPebble](https://digitalpebble.com/). Please get in touch if you need our help with GreenOps or digital sustainability in general.
+Developed by [DigitalPebble](https://digitalpebble.com/).
+Please get in touch if you need our help with GreenOps or digital sustainability in general.
+You can also sponsor this project, which is always appreciated.
+
