@@ -3,6 +3,7 @@
 # Aspen - GitHub Actions Carbon Estimator
 
 [![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge.json)](https://github.com/DigitalPebble/aspen)
+[![CI CO2eq billing](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge-billing.json)](https://github.com/DigitalPebble/aspen)
 
 Aspen estimates the energy use and carbon emissions of GitHub Actions for a repository or an organisation. It reads either the jobs of your workflow runs or the GitHub billing report, applies a carbon estimation model (see [Methodology](#methodology)) and writes a JSON report, a markdown summary and an optional badge.
 
