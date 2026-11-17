@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # `uses: ./` is not a release tag, so the action is built from source here
-      - uses: ./
-        id: aspen
+      - name: Aspen - GitHub Actions Carbon Estimator
+        uses: DigitalPebble/aspen@v1.0.0
       - uses: actions/upload-artifact@v4
         with:
           name: carbon-estimate
