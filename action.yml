@@ -3,7 +3,7 @@ description: 'Estimate the environmental impact of GitHub Actions for a reposito
 author: 'DigitalPebble'
 
 branding:
-  icon: 'wind'
+  icon: 'download-cloud'
   color: 'green'
 
 inputs:
@@ -109,7 +109,3 @@ runs:
       run: |
         echo "report-path=$INPUT_OUTPUT_PATH" >> "$GITHUB_OUTPUT"
         echo "badge-path=$INPUT_BADGE_PATH" >> "$GITHUB_OUTPUT"
-
-branding:
-  icon: 'download-cloud'
-  color: 'green'
