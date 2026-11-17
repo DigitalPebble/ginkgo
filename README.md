@@ -58,7 +58,19 @@ The action analyses the jobs of this repository's workflow runs with the built-i
 | `total_co2eq_g` | Total estimated emissions (gCO2eq) |
 | `total_energy_wh` | Total estimated energy usage (Wh) |
 
-The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary. Binaries exist for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64). On other runners, or when the action is used from a branch or commit (`@main`, `uses: ./`), it is built from source, which is slower.
+The action also adds a markdown report (totals, per repository and per runner SKU) to the job summary.
+
+The JSON report is written to the runner and discarded when the job ends. To keep it, give the Aspen step an `id` and upload the report as an artifact:
+
+```yaml
+steps:
+  - uses: DigitalPebble/aspen@v1.0.0
+    id: aspen
+  - uses: actions/upload-artifact@v4
+    with:
+      name: carbon-estimate
+      path: ${{ steps.aspen.outputs.report-path }}
+```
 
 ### Add a badge
 
@@ -152,7 +164,7 @@ The CLI is for administrators who want data for the **entire organisation**. Wit
 
 ### Install
 
-Download the archive for your platform from the [latest release](https://github.com/DigitalPebble/aspen/releases/latest). Assets are named `aspen-<tag>-<target>.tar.gz` (`.zip` on Windows), each with a `.sha256` checksum file. On Linux x86_64:
+Binaries exist for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64). Download the archive for your platform from the [latest release](https://github.com/DigitalPebble/aspen/releases/latest). Assets are named `aspen-<tag>-<target>.tar.gz` (`.zip` on Windows), each with a `.sha256` checksum file. On Linux x86_64:
 
 ```bash
 curl -LO https://github.com/DigitalPebble/aspen/releases/latest/download/aspen-v1.0.0-x86_64-unknown-linux-gnu.tar.gz
@@ -248,7 +260,9 @@ Storage (`Actions storage`, billed in `GigabyteHours`) uses an SSD energy factor
 
 ## Releasing
 
-Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`. Once merged, the script tags `main` with `v<version>`, which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then publishes a GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` file.
+Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`. Once merged, the script tags `main` with `v<version>`, which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then creates a **draft** GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` file.
+
+The release stays a draft until you publish it by hand, so the action cannot download its binaries before then. Once the workflow has finished, open the draft under Releases, check the assets, then tick "Publish this Action to the GitHub Marketplace" (choose a category) and publish. A release has to be published from this page for the Marketplace option to apply, because a second release cannot be created for a tag that already exists.
 
 ## Licence
 

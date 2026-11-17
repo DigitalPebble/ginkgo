@@ -5,7 +5,8 @@ set -euo pipefail
 #   1. opens a pull request on a release-<version> branch which sets the version in Cargo.toml
 #   2. once that PR is merged, tags the merge commit on main (v<version>) and pushes the tag
 # The tag triggers .github/workflows/release.yml, which builds the binaries
-# and publishes them with their SHA-256 checksums as GitHub release assets.
+# and attaches them with their SHA-256 checksums to a draft GitHub release.
+# Publish the draft by hand (ticking the Marketplace box) once it has finished.
 
 command -v gh >/dev/null || { echo "The GitHub CLI (gh) is required"; exit 1; }
 command -v cargo >/dev/null || { echo "cargo is required"; exit 1; }
@@ -104,5 +105,6 @@ git push origin --delete "$BRANCH" 2>/dev/null || true
 
 echo ""
 echo "Done! Tag $TAG pushed."
-echo "The release workflow is now building the binaries:"
+echo "The release workflow is now building the binaries into a draft release."
+echo "Publish the draft once it has finished (tick the Marketplace option):"
 gh repo view --json url --jq '.url + "/actions/workflows/release.yml"'
