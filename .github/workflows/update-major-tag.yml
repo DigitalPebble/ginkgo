@@ -1,0 +1,40 @@
+name: Update major tag
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  update-major-tag:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Move major tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag $TAG is not vMAJOR.MINOR.PATCH, skipping"
+            exit 0
+          fi
+          MAJOR="v${BASH_REMATCH[1]}"
+
+          # Don't move the major tag backwards (e.g. a backport release)
+          LATEST=$(git tag --list "${MAJOR}.*.*" --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
+          if [[ "$LATEST" != "$TAG" ]]; then
+            echo "$TAG is not the highest $MAJOR release ($LATEST), skipping"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa "$MAJOR" -m "Update $MAJOR to $TAG" "$TAG"
+          git push origin "$MAJOR" --force
