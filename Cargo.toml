@@ -1,6 +1,6 @@
 [package]
 name = "aspen"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 description = "Aspen - GitHub Actions Carbon Estimator"
 repository = "https://github.com/DigitalPebble/aspen"
