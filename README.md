@@ -46,7 +46,7 @@ permissions:
   actions: read
 
 steps:
-  - uses: DigitalPebble/aspen@v1.0.0
+  - uses: DigitalPebble/aspen@v1
 ```
 
 The action analyses the jobs of this repository's workflow runs with the built-in `GITHUB_TOKEN`. The token can only see this repository, and the data it reads is already visible to anyone who can see its Actions runs, so the risk is low.
@@ -58,7 +58,7 @@ The action analyses the jobs of this repository's workflow runs with the built-i
 | `days` | `30` | Days of usage to analyse, up to today. The same period for both sources, so their figures are comparable |
 | `output_path` | `carbon-estimate.json` | Where the report is saved |
 | `badge_path` | `badge.json` | Where the badge JSON is written (empty to skip) |
-| `version` | the action's tag | Release to download, e.g. `v1.0.0` or `latest` |
+| `version` | the action's tag | Release to download, e.g. `v1` or `latest` |
 
 | Output | Description |
 |--------|-------------|
@@ -73,7 +73,7 @@ The JSON report is written to the runner and discarded when the job ends. To kee
 
 ```yaml
 steps:
-  - uses: DigitalPebble/aspen@v1.0.0
+  - uses: DigitalPebble/aspen@v1
     id: aspen
   - uses: actions/upload-artifact@v4
     with:
@@ -100,7 +100,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v4
-  - uses: DigitalPebble/aspen@v1.0.0
+  - uses: DigitalPebble/aspen@v1
     id: aspen
   - name: Publish badge
     env:
@@ -137,7 +137,7 @@ Set `source: billing` and pass an organisation token:
 
 ```yaml
 steps:
-  - uses: DigitalPebble/aspen@v1.0.0
+  - uses: DigitalPebble/aspen@v1
     with:
       source: billing
       github_token: ${{ secrets.ORG_BILLING_TOKEN }}
@@ -280,12 +280,6 @@ Once you have a first report, a few changes can bring the numbers down.
 Energy consumption estimates come from [BoaviztAPI](https://github.com/Boavizta/boaviztapi). The carbon intensity is an average for the US in 2024 from [Ember](https://ember-energy.org). The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for its datacentres in America in 2025.
 
 Storage (`Actions storage`, billed in `GigabyteHours`) uses an SSD energy factor of 1.2 Wh per terabyte hour, with the same PUE and carbon intensity. Items of that SKU with any other unit are ignored.
-
-## Releasing
-
-Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`. Once merged, the script tags `main` with `v<version>`, which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then creates a **draft** GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` file.
-
-The release stays a draft until you publish it by hand, so the action cannot download its binaries before then. Once the workflow has finished, open the draft under Releases, check the assets, then tick "Publish this Action to the GitHub Marketplace" (choose a category) and publish. A release has to be published from this page for the Marketplace option to apply, because a second release cannot be created for a tag that already exists.
 
 ## Licence
 
