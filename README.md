@@ -17,6 +17,10 @@ Aspen estimates emissions from job durations and runner types; it does not measu
 
 > 💡 **Did you know?** Aspens are among the largest living organisms on Earth. A famous quaking aspen grove in Utah called Pando is a single clonal colony of about 47,000 stems. They all share one root system and are genetically identical. It is estimated to weigh around 6,000 tonnes, and parts of the root system may be thousands of years old.
 
+## Why?
+
+Data centres use a growing share of the world's electricity, and a large part of that capacity is in the US, where the grid still relies heavily on fossil fuels. CI runs on that infrastructure. The cost may not come from your wallet, especially if you use the free minutes, but it still falls on the planet. Knowing how much your workflows emit is the first step towards reducing it.
+
 ## Jobs vs billing: precision and coverage
 
 | | `jobs` (default) | `billing` |
@@ -260,6 +264,16 @@ Aspen adds two fields to each of the _usageItems_ of the usage report, `energy_u
 ```
 
 With the `jobs` source, each item also carries `workflow_name` and `workflow_path` (e.g. `.github/workflows/ci.yml`). These keys are absent from `billing` reports.
+
+## What next?
+
+Once you have a first report, a few changes can bring the numbers down.
+
+1. Use your own runners in a region with a low carbon intensity, such as Sweden or France. GitHub hosted runners are mostly in the US, so the same job usually emits less on a grid with more nuclear, hydro or wind.
+2. Avoid triggering workflows when they are not needed. A change to the documentation should not lead to the code being built and tested again. Use `paths` or `paths-ignore` filters on your `push` and `pull_request` triggers, and add a `concurrency` group with `cancel-in-progress` so superseded runs stop early.
+3. Run jobs on ARM runners where your code supports it, for example `ubuntu-24.04-arm`. In Aspen's model a 4 vCPU ARM Ubuntu runner draws 2.157 W against 4.315 W for the x86 one, about half. These figures come from instance types of other cloud providers (Scaleway for ARM, Azure for x86) and not from GitHub's own hardware, so treat the saving as an estimate. It also assumes the job takes about as long on both architectures, so compare durations after switching.
+4. Cache dependencies and build outputs, so jobs spend less time downloading and compiling the same things.
+5. Pick the smallest runner that does the job, and stop long jobs as soon as they fail.
 
 ## Methodology
 
