@@ -33,6 +33,18 @@ inputs:
       Silver with the `jobs` source, gold with the more accurate `billing` source. Empty to skip.
     required: false
     default: 'badge.json'
+  publish_badge:
+    description: >-
+      Commit the badge file to `badge_branch` of this repository. Needs `contents: write`
+      on the job. Uses the built-in token, not `github_token`.
+    required: false
+    default: 'false'
+  badge_branch:
+    description: >-
+      Branch the badge file is committed to when `publish_badge` is true. Created as an
+      orphan branch if missing. The file keeps the name of `badge_path`.
+    required: false
+    default: 'badges'
   version:
     description: >-
       Aspen release tag to download (e.g. v0.3.0, or "latest"). By default the release
@@ -109,3 +121,13 @@ runs:
       run: |
         echo "report-path=$INPUT_OUTPUT_PATH" >> "$GITHUB_OUTPUT"
         echo "badge-path=$INPUT_BADGE_PATH" >> "$GITHUB_OUTPUT"
+
+    - name: Publish badge
+      if: inputs.publish_badge == 'true'
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        BADGE_PATH: ${{ inputs.badge_path }}
+        BADGE_BRANCH: ${{ inputs.badge_branch }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: bash "$ACTION_PATH/scripts/publish-badge.sh"

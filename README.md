@@ -58,6 +58,8 @@ The action analyses the jobs of this repository's workflow runs with the built-i
 | `days` | `30` | Days of usage to analyse, up to today. The same period for both sources, so their figures are comparable |
 | `output_path` | `carbon-estimate.json` | Where the report is saved |
 | `badge_path` | `badge.json` | Where the badge JSON is written (empty to skip) |
+| `publish_badge` | `false` | Commit the badge file to `badge_branch` of this repository (needs `contents: write`) |
+| `badge_branch` | `badges` | Branch the badge is published to. Created if missing |
 | `version` | the action's tag | Release to download, e.g. `v1` or `latest` |
 
 | Output | Description |
@@ -91,7 +93,7 @@ The action writes a [shields.io endpoint](https://shields.io/badges/endpoint-bad
 
 The colour shows how the data was obtained: **silver** for the `jobs` source (inferred) and **gold** for the `billing` source (as billed).
 
-To display it, publish the file on a `badges` branch. This only needs the built-in token with `contents: write`:
+To display it, let the action publish the file to a branch of your repository. Set `publish_badge: true` and give the job `contents: write`:
 
 ```yaml
 permissions:
@@ -99,37 +101,22 @@ permissions:
   contents: write
 
 steps:
-  - uses: actions/checkout@v4
   - uses: DigitalPebble/aspen@v1
-    id: aspen
-  - name: Publish badge
-    env:
-      BADGE_PATH: ${{ steps.aspen.outputs.badge-path }}
-    run: |
-      set -euo pipefail
-      cp "$BADGE_PATH" "$RUNNER_TEMP/badge.json"
-      git config user.name "github-actions[bot]"
-      git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      if git ls-remote --exit-code --heads origin badges >/dev/null; then
-        git fetch --depth=1 origin badges
-        git checkout -f -B badges FETCH_HEAD
-      else
-        git checkout --orphan badges
-        git rm -rf --quiet .
-      fi
-      cp "$RUNNER_TEMP/badge.json" badge.json
-      git add badge.json
-      git diff --cached --quiet || git commit -m "Update carbon badge"
-      git push origin badges
+    with:
+      publish_badge: true
 ```
 
-Then add this to your README, replacing `OWNER/REPO` with your repository:
+The file is committed to the `badges` branch (created if it does not exist) as `badge.json`. Use `badge_branch` to pick another branch and `badge_path` to change the file name. Only the file name is kept on the branch, so `badge_path: out/badge-billing.json` is published as `badge-billing.json`. To publish both badges, run the action twice with different `badge_path` values.
+
+Publishing always uses the built-in `GITHUB_TOKEN`, even with `source: billing`, so your organisation token never needs write access. The action works in a temporary directory and leaves your checkout untouched, so no `actions/checkout` step is required.
+
+Then add this to your README, replacing `OWNER/REPO` with your repository (and `badges` / `badge.json` if you changed them):
 
 ```markdown
 [![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/badges/badge.json)](https://github.com/DigitalPebble/aspen)
 ```
 
-The figures cover a rolling period, so a weekly schedule is usually enough. The badge only works for public repositories, as shields.io cannot read the `badges` branch of a private one. Keep this workflow restricted like any other with write access.
+The figures cover a rolling period, so a weekly schedule is usually enough. The badge only works for public repositories, as shields.io cannot read the badge branch of a private one. Keep this workflow restricted like any other with write access.
 
 ## 2. GitHub Action with the `billing` source
 
