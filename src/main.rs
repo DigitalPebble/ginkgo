@@ -7,6 +7,7 @@ mod model;
 mod summary;
 
 use anyhow::{bail, Context, Result};
+use chrono::Datelike;
 use clap::Parser;
 use model::ActionsBill;
 use std::fs::{self, OpenOptions};
@@ -29,7 +30,7 @@ struct Cli {
     #[arg(short, long)]
     file: Option<String>,
 
-    /// GitHub token with organization Administration (read) permission
+    /// GitHub token: `actions: read` on the repository for `jobs`, organization Administration (read) for `billing`
     #[arg(short, long, env = "INPUT_GITHUB_TOKEN")]
     token: Option<String>,
 
@@ -45,11 +46,11 @@ struct Cli {
     #[arg(long, env = "INPUT_SOURCE", value_enum, default_value = "billing")]
     source: Source,
 
-    /// Number of days of workflow runs to analyse (jobs source only)
-    #[arg(long, env = "INPUT_DAYS", default_value_t = 30)]
+    /// Number of days of usage to analyse, up to today (billing source: ignored when --year, --month or --day is set)
+    #[arg(long, env = "INPUT_DAYS", default_value_t = 30, value_parser = clap::value_parser!(u32).range(1..))]
     days: u32,
 
-    /// Year of the billing usage report (billing source only; defaults to the current period)
+    /// Year of the billing usage report (billing source only; replaces --days)
     #[arg(long, env = "INPUT_YEAR", value_parser = clap::value_parser!(u32).range(2000..=9999))]
     year: Option<u32>,
 
@@ -153,14 +154,19 @@ fn main() -> Result<()> {
             .or(cli.organization.as_deref().filter(|s| !s.is_empty()))
             .context("Organization is required when not using --file (set --organization or INPUT_ORGANIZATION)")?;
         println!("Fetching billing data for organization: {}", organization);
-        let bill = fetch_billing_usage(token, organization, cli.year, cli.month, cli.day)?;
-        badge_color = summary::BADGE_COLOR_BILLING;
-        badge_period = match (cli.year, cli.month, cli.day) {
-            (Some(y), Some(m), Some(d)) => format!("{y}-{m:02}-{d:02}"),
-            (Some(y), Some(m), None) => format!("{y}-{m:02}"),
-            (Some(y), None, None) => y.to_string(),
-            _ => String::new(),
+        let bill = if cli.year.is_none() && cli.month.is_none() && cli.day.is_none() {
+            badge_period = format!("{}d", cli.days);
+            fetch_billing_last_days(token, organization, cli.days)?
+        } else {
+            badge_period = match (cli.year, cli.month, cli.day) {
+                (Some(y), Some(m), Some(d)) => format!("{y}-{m:02}-{d:02}"),
+                (Some(y), Some(m), None) => format!("{y}-{m:02}"),
+                (Some(y), None, None) => y.to_string(),
+                _ => String::new(),
+            };
+            fetch_billing_usage(token, organization, cli.year, cli.month, cli.day)?
         };
+        badge_color = summary::BADGE_COLOR_BILLING;
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     };
@@ -207,6 +213,35 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Fetches the billing usage of the last `days` days, today included, to match the
+/// period of the jobs source. A yearly report only has one item per month, so each
+/// month overlapping the period is fetched on its own (daily items) and the items
+/// before the first day are dropped.
+fn fetch_billing_last_days(token: &str, organization: &str, days: u32) -> Result<ActionsBill> {
+    let today = chrono::Utc::now().date_naive();
+    let since = today - chrono::Duration::days(days as i64);
+    let since_str = since.format("%Y-%m-%d").to_string();
+
+    let mut bill = ActionsBill::default();
+    let (mut year, mut month) = (since.year(), since.month());
+    while (year, month) <= (today.year(), today.month()) {
+        let monthly =
+            fetch_billing_usage(token, organization, Some(year as u32), Some(month), None)?;
+        bill.usage_items.extend(
+            monthly
+                .usage_items
+                .into_iter()
+                .filter(|i| i.date.get(..10).is_some_and(|d| d >= since_str.as_str())),
+        );
+        (year, month) = if month == 12 {
+            (year + 1, 1)
+        } else {
+            (year, month + 1)
+        };
+    }
+    Ok(bill)
 }
 
 fn fetch_billing_usage(
