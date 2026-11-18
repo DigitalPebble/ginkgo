@@ -17,6 +17,10 @@ Aspen estimates emissions from job durations and runner types; it does not measu
 
 > 💡 **Did you know?** Aspens are among the largest living organisms on Earth. A famous quaking aspen grove in Utah called Pando is a single clonal colony of about 47,000 stems. They all share one root system and are genetically identical. It is estimated to weigh around 6,000 tonnes, and parts of the root system may be thousands of years old.
 
+## Why?
+
+Data centres use a growing share of the world's electricity, and a large part of that capacity is in the US, where the grid still relies heavily on fossil fuels. CI runs on that infrastructure. The cost may not come from your wallet, especially if you use the free minutes, but it still falls on the planet. Knowing how much your workflows emit is the first step towards reducing it.
+
 ## Jobs vs billing: precision and coverage
 
 | | `jobs` (default) | `billing` |
@@ -42,7 +46,7 @@ permissions:
   actions: read
 
 steps:
-  - uses: DigitalPebble/aspen@v1.0.0
+  - uses: DigitalPebble/aspen@v1
 ```
 
 The action analyses the jobs of this repository's workflow runs with the built-in `GITHUB_TOKEN`. The token can only see this repository, and the data it reads is already visible to anyone who can see its Actions runs, so the risk is low.
@@ -56,7 +60,7 @@ The action analyses the jobs of this repository's workflow runs with the built-i
 | `badge_path` | `badge.json` | Where the badge JSON is written (empty to skip) |
 | `publish_badge` | `false` | Commit the badge file to `badge_branch` of this repository (needs `contents: write`) |
 | `badge_branch` | `badges` | Branch the badge is published to. Created if missing |
-| `version` | the action's tag | Release to download, e.g. `v1.0.0` or `latest` |
+| `version` | the action's tag | Release to download, e.g. `v1` or `latest` |
 
 | Output | Description |
 |--------|-------------|
@@ -71,7 +75,7 @@ The JSON report is written to the runner and discarded when the job ends. To kee
 
 ```yaml
 steps:
-  - uses: DigitalPebble/aspen@v1.0.0
+  - uses: DigitalPebble/aspen@v1
     id: aspen
   - uses: actions/upload-artifact@v4
     with:
@@ -97,7 +101,7 @@ permissions:
   contents: write
 
 steps:
-  - uses: DigitalPebble/aspen@v1.0.0
+  - uses: DigitalPebble/aspen@v1
     with:
       publish_badge: true
 ```
@@ -120,7 +124,7 @@ Set `source: billing` and pass an organisation token:
 
 ```yaml
 steps:
-  - uses: DigitalPebble/aspen@v1.0.0
+  - uses: DigitalPebble/aspen@v1
     with:
       source: billing
       github_token: ${{ secrets.ORG_BILLING_TOKEN }}
@@ -248,17 +252,21 @@ Aspen adds two fields to each of the _usageItems_ of the usage report, `energy_u
 
 With the `jobs` source, each item also carries `workflow_name` and `workflow_path` (e.g. `.github/workflows/ci.yml`). These keys are absent from `billing` reports.
 
+## What next?
+
+Once you have a first report, a few changes can bring the numbers down.
+
+1. Use your own runners in a region with a low carbon intensity, such as Sweden or France. GitHub hosted runners are mostly in the US, so the same job usually emits less on a grid with more nuclear, hydro or wind.
+2. Avoid triggering workflows when they are not needed. A change to the documentation should not lead to the code being built and tested again. Use `paths` or `paths-ignore` filters on your `push` and `pull_request` triggers, and add a `concurrency` group with `cancel-in-progress` so superseded runs stop early.
+3. Run jobs on ARM runners where your code supports it, for example `ubuntu-24.04-arm`. In Aspen's model a 4 vCPU ARM Ubuntu runner draws 2.157 W against 4.315 W for the x86 one, about half. These figures come from instance types of other cloud providers (Scaleway for ARM, Azure for x86) and not from GitHub's own hardware, so treat the saving as an estimate. It also assumes the job takes about as long on both architectures, so compare durations after switching.
+4. Cache dependencies and build outputs, so jobs spend less time downloading and compiling the same things.
+5. Pick the smallest runner that does the job, and stop long jobs as soon as they fail.
+
 ## Methodology
 
 Energy consumption estimates come from [BoaviztAPI](https://github.com/Boavizta/boaviztapi). The carbon intensity is an average for the US in 2024 from [Ember](https://ember-energy.org). The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for its datacentres in America in 2025.
 
 Storage (`Actions storage`, billed in `GigabyteHours`) uses an SSD energy factor of 1.2 Wh per terabyte hour, with the same PUE and carbon intensity. Items of that SKU with any other unit are ignored.
-
-## Releasing
-
-Run `./release.sh` from a clean checkout (requires the [GH CLI](https://cli.github.com/)). It opens a pull request that sets the version in `Cargo.toml`. Once merged, the script tags `main` with `v<version>`, which triggers the [release workflow](.github/workflows/release.yml). The workflow checks the tag is on `main` and matches `Cargo.toml`, runs clippy and the tests, then creates a **draft** GitHub release with binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64), each with a `.sha256` file.
-
-The release stays a draft until you publish it by hand, so the action cannot download its binaries before then. Once the workflow has finished, open the draft under Releases, check the assets, then tick "Publish this Action to the GitHub Marketplace" (choose a category) and publish. A release has to be published from this page for the Marketplace option to apply, because a second release cannot be created for a tag that already exists.
 
 ## Licence
 
