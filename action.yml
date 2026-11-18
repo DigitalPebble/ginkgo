@@ -20,7 +20,7 @@ inputs:
     required: false
     default: 'jobs'
   days:
-    description: 'Number of days of workflow runs to analyse (jobs source only)'
+    description: 'Number of days of usage to analyse, up to today (both sources, so their figures are comparable)'
     required: false
     default: '30'
   output_path:

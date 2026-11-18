@@ -26,9 +26,10 @@ Aspen estimates emissions from job durations and runner types; it does not measu
 | Self-hosted and larger runners | reported, but no estimate | as billed |
 | Storage | not included | included |
 | Per-workflow breakdown | yes, grouped by workflow file | no, the billing API does not expose workflows |
-| Period | last `days` days, at most 5,000 runs | any month or day, via `--year`, `--month`, `--day` |
+| Period | last `days` days, at most 5,000 runs | last `days` days, or any year, month or day via `--year`, `--month`, `--day` (CLI only) |
 | Coverage | the repository the token belongs to | the whole organisation |
 | Token | built-in `GITHUB_TOKEN` | organisation `Administration` (read) |
+| Badge | ![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge.json) | ![CI CO2eq billing](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge-billing.json) |
 
 `jobs` is an approximation: durations are rounded up and runner types are guessed from labels such as `ubuntu-latest` or `windows-latest`. `billing` is the data GitHub invoices, so it is the more precise of the two and the only one covering storage and the whole organisation, at the cost of a powerful token. Only `jobs` can tell you which workflow the emissions come from.
 
@@ -50,7 +51,7 @@ The action analyses the jobs of this repository's workflow runs with the built-i
 |-------|---------|-------------|
 | `source` | `jobs` | `jobs` or `billing` |
 | `github_token` | `${{ github.token }}` | With `jobs`, `actions: read` is enough. With `billing`, an organisation token (see step 2) |
-| `days` | `30` | Days of workflow runs to analyse (`jobs` only) |
+| `days` | `30` | Days of usage to analyse, up to today. The same period for both sources, so their figures are comparable |
 | `output_path` | `carbon-estimate.json` | Where the report is saved |
 | `badge_path` | `badge.json` | Where the badge JSON is written (empty to skip) |
 | `version` | the action's tag | Release to download, e.g. `v1.0.0` or `latest` |
@@ -191,6 +192,8 @@ Fetch the billing report of your organisation and enrich it:
 aspen --token ghp_... --organization your-org
 ```
 
+By default this covers the last 30 days, like the `jobs` source; change it with `--days`. For a calendar period instead, use `--year`, `--month` and `--day`, e.g. `--year 2026 --month 10` for October.
+
 The output is written to `./carbon-estimate.json`, or to the path given with `--output`. Both values can also come from environment variables (see the options below).
 
 To use the jobs of a single repository instead, with no administrator access:
@@ -219,10 +222,10 @@ Usage: aspen [OPTIONS]
 
 Options:
   -f, --file <FILE>                    Path to a local billing JSON file (instead of fetching from GitHub API)
-  -t, --token <TOKEN>                  GitHub token with organization Administration (read) permission [env: INPUT_GITHUB_TOKEN=]
+  -t, --token <TOKEN>                  GitHub token: `actions: read` on the repository for `jobs`, organization Administration (read) for `billing` [env: INPUT_GITHUB_TOKEN=]
   --source <SOURCE>                    Where to get the usage data from: `billing` (default) or `jobs` [env: INPUT_SOURCE=]
-      --days <DAYS>                    Days of workflow runs to analyse (jobs source only) [env: INPUT_DAYS=] [default: 30]
-      --year <YEAR>                    Year of the billing report (billing source only) [env: INPUT_YEAR=]
+      --days <DAYS>                    Days of usage to analyse, up to today (billing source: ignored when --year, --month or --day is set) [env: INPUT_DAYS=] [default: 30]
+      --year <YEAR>                    Year of the billing report (billing source only; replaces --days) [env: INPUT_YEAR=]
       --month <MONTH>                  Month (1-12) of the billing report (billing source only) [env: INPUT_MONTH=]
       --day <DAY>                      Day (1-31) of the billing report (billing source only) [env: INPUT_DAY=]
       --badge <BADGE>                  Path where a shields.io endpoint badge (JSON) will be written [env: INPUT_BADGE_PATH=]
