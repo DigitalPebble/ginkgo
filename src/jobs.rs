@@ -83,6 +83,8 @@ pub fn items_from_jobs(json: &str, owner: &str, repo: &str) -> anyhow::Result<Ve
             net_amount: 0.0,
             organization_name: owner.to_string(),
             repository_name: repo.to_string(),
+            workflow_name: None,
+            workflow_path: None,
             energy_usage_wh: None,
             co2eq_g: None,
         });

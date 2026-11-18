@@ -19,6 +19,22 @@ pub struct UsageItem {
     pub organization_name: String,
     pub repository_name: String,
 
+    /// Name of the workflow the usage comes from (jobs source only).
+    #[serde(
+        rename = "workflow_name",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub workflow_name: Option<String>,
+
+    /// Path of the workflow file, e.g. `.github/workflows/ci.yml` (jobs source only).
+    #[serde(
+        rename = "workflow_path",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub workflow_path: Option<String>,
+
     #[serde(rename = "energy_usage_wh", skip_serializing_if = "Option::is_none")]
     pub energy_usage_wh: Option<f64>,
 
