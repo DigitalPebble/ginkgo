@@ -268,6 +268,12 @@ Energy consumption estimates come from [BoaviztAPI](https://github.com/Boavizta/
 
 Storage (`Actions storage`, billed in `GigabyteHours`) uses an SSD energy factor of 1.2 Wh per terabyte hour, with the same PUE and carbon intensity. Items of that SKU with any other unit are ignored.
 
+See [METHODOLOGY.md](METHODOLOGY.md) for the full details: the formula, where the figures are configured, the assumptions behind them, what is not estimated and the known limitations.
+
+## Contributing
+
+We welcome contributions to the project. Open an [issue](https://github.com/DigitalPebble/aspen/issues) to report a bug or suggest an improvement, or send a [pull request](https://github.com/DigitalPebble/aspen/pulls). Contributions are not only about code: by testing Aspen on your repositories, talking about it or asking questions, you will be contributing too!
+
 ## Licence
 
 Apache License 2.0
