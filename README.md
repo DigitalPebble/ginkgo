@@ -272,7 +272,7 @@ See [METHODOLOGY.md](METHODOLOGY.md) for the full details: the formula, where th
 
 ## Contributing
 
-We welcome contributions to the project. Open an [issue](https://github.com/DigitalPebble/aspen/issues) to report a bug or suggest an improvement, or send a [pull request](https://github.com/DigitalPebble/aspen/pulls). Contributions are not only about code: by testing Aspen on your repositories, talking about it or asking questions, you will be contributing too!
+We welcome contributions to the project, see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on how to do so. Contributions are not only about code: by testing Aspen on your repositories, talking about it or asking questions, you will be contributing too!
 
 ## Licence
 
