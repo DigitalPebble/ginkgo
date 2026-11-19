@@ -13,8 +13,8 @@ All the coefficients are in [`resources/config.json`](resources/config.json):
 
 | Key | Value | Unit |
 |---|---|---|
-| `power_consumption.runners.<runner>.value` | see below | W |
-| `storage_energy.ssd.value` | 1.2 | Wh per terabyte hour |
+| `power_consumption.runners.<runner>.value` | see below | Wh |
+| `storage_energy.ssd.value` | 1.2 | Wh per gigabyte hour |
 | `grid_carbon_intensity.value` | 383 | gCO2eq/kWh |
 | `pue.value` | 1.16 | ratio |
 
@@ -102,7 +102,7 @@ The Power Usage Effectiveness accounts for cooling, power distribution and other
 
 ## Grid carbon intensity
 
-Aspen uses 383 gCO2eq/kWh, the average for the US in 2024 from [Ember](https://ember-energy.org). GitHub does not say which Azure regions its runners use, but most of them are in the US. The figure is a yearly average and does not reflect the time of day a job ran or the renewable energy purchased by Microsoft (location based, not market based).
+Aspen uses 383 gCO2eq/kWh, the average for the US in 2024 from [Ember](https://ember-energy.org). GitHub does not say which Azure regions its runners use, but most of them are in the US. The figure is a yearly average and does not reflect the time of day a job ran.
 
 ## Worked example
 
