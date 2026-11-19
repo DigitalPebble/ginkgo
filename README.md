@@ -15,7 +15,7 @@ It runs in three ways:
 
 Aspen estimates emissions from job durations and runner types; it does not measure energy on the runner. If you need measured, per-step energy figures, look at [eco-ci-energy-estimation](https://github.com/green-coding-solutions/eco-ci-energy-estimation/).
 
-> 💡 **Did you know?** Aspens are among the largest living organisms on Earth. A famous quaking aspen grove in Utah called Pando is a single clonal colony of about 47,000 stems. They all share one root system and are genetically identical. It is estimated to weigh around 6,000 tonnes, and parts of the root system may be thousands of years old.
+> 💡 **Did you know?** Aspens are among the largest living organisms on Earth. A famous quaking aspen grove in Utah called [Pando](https://en.wikipedia.org/wiki/Pando_(tree)) is a single clonal colony of about 47,000 stems. They all share one root system and are genetically identical. It is estimated to weigh around 6,000 tonnes, and parts of the root system may be thousands of years old.
 
 ## Why?
 
