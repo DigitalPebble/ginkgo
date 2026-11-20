@@ -2,7 +2,7 @@
 name = "aspen"
 version = "1.3.0"
 edition = "2021"
-description = "Aspen - GitHub Actions Carbon Estimator"
+description = "Aspen - GitHub Actions Impacts Estimator"
 repository = "https://github.com/DigitalPebble/aspen"
 homepage = "https://github.com/DigitalPebble/aspen"
 

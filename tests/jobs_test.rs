@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use aspen::estimator::calculate_carbon_impact;
+use aspen::estimator::calculate_impacts;
 use aspen::jobs::{items_from_jobs, sku_for_labels};
 use aspen::model::ActionsBill;
 
@@ -79,7 +79,7 @@ fn items_feed_the_estimator() {
     let mut bill = ActionsBill {
         usage_items: items_from_jobs(JOBS, "o", "r").unwrap(),
     };
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
     assert!(bill.usage_items[0].co2eq_g.unwrap() > 0.0);
     assert!(bill.usage_items[1].co2eq_g.unwrap() > 0.0);
     assert!(bill.usage_items[2].co2eq_g.is_none());
@@ -99,7 +99,7 @@ fn summary_has_a_workflow_table_when_names_are_known() {
     };
     assert!(!aspen::summary::to_markdown(&{
         let mut b = bill.clone();
-        calculate_carbon_impact(&mut b);
+        calculate_impacts(&mut b);
         b
     })
     .contains("By workflow"));
@@ -108,7 +108,7 @@ fn summary_has_a_workflow_table_when_names_are_known() {
         item.workflow_name = Some("CI".to_string());
         item.workflow_path = Some(".github/workflows/ci.yml".to_string());
     }
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
     let md = aspen::summary::to_markdown(&bill);
     assert!(md.contains("By workflow"));
     assert!(md.contains(

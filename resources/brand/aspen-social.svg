@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Aspen — GitHub Actions carbon estimator">
-  <title>Aspen — GitHub Actions carbon estimator</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Aspen — GitHub Actions impacts estimator">
+  <title>Aspen — GitHub Actions impacts estimator</title>
   <rect width="1280" height="640" fill="#F6F4EF"/>
   <g transform="translate(130 130) scale(3.1)">
 <defs><linearGradient id="a" x1="0" y1="0" x2="0.25" y2="1"><stop offset="0" stop-color="#E4472B"/><stop offset=".55" stop-color="#F0732B"/><stop offset="1" stop-color="#F6B13C"/></linearGradient></defs>
@@ -13,5 +13,5 @@
         font-size="132" font-weight="500" letter-spacing="-4">aspen</text>
   <text x="434" y="420" fill="#4A5560"
         font-family="Inter, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif"
-        font-size="40" font-weight="400" letter-spacing="0">GitHub Actions carbon estimator</text>
+        font-size="40" font-weight="400" letter-spacing="0">GitHub Actions impacts estimator</text>
 </svg>

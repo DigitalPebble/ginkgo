@@ -6,7 +6,7 @@ use crate::model::ActionsBill;
 const STORAGE_UNIT: &str = "gigabytehours";
 const GB_PER_TB: f64 = 1000.0;
 
-pub fn calculate_carbon_impact(bill: &mut ActionsBill) {
+pub fn calculate_impacts(bill: &mut ActionsBill) {
     let config = Config::instance();
     let pue = config.pue;
     let grid_intensity = config.grid_carbon_intensity;

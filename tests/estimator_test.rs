@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use aspen::estimator::calculate_carbon_impact;
+use aspen::estimator::calculate_impacts;
 use aspen::model::ActionsBill;
 
 // Constants matching resources/config.json
@@ -34,7 +34,7 @@ fn expected_values(minutes: f64, power_w: f64) -> (f64, f64) {
 #[test]
 fn sets_energy_and_co2_on_minute_items() {
     let mut bill = load_test_bill();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
 
     for item in &bill.usage_items {
         if item.unit_type == "Minutes" {
@@ -73,7 +73,7 @@ fn storage_bill(product: &str, sku: &str, gigabyte_hours: f64) -> ActionsBill {
 fn assert_storage_values(sku: &str, wh_per_tb_hour: f64, replication: f64) {
     let gigabyte_hours = 2.533244733;
     let mut bill = storage_bill("packages", sku, gigabyte_hours);
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
 
     let item = &bill.usage_items[0];
     let energy_wh = wh_per_tb_hour * (gigabyte_hours / 1000.0) * replication * PUE;
@@ -94,7 +94,7 @@ fn assert_storage_values(sku: &str, wh_per_tb_hour: f64, replication: f64) {
 #[test]
 fn computes_correct_values_for_storage() {
     let mut bill = load_test_bill();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
 
     let item = &bill.usage_items[0];
     assert_eq!(item.sku, "Actions storage");
@@ -137,7 +137,7 @@ fn matches_storage_sku_regardless_of_case() {
 #[test]
 fn skips_storage_sku_missing_from_config() {
     let mut bill = storage_bill("copilot", "Copilot storage", 1000.0);
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
 
     let item = &bill.usage_items[0];
     assert!(item.energy_usage_wh.is_none());
@@ -155,7 +155,7 @@ fn skips_storage_with_unexpected_unit() {
         "grossAmount":0.0,"discountAmount":0.0,"netAmount":0.0,
         "organizationName":"o","repositoryName":"r"}]}"#;
     let mut bill = ActionsBill::from_json(json).unwrap();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
     for item in &bill.usage_items {
         assert!(item.energy_usage_wh.is_none());
         assert!(item.co2eq_g.is_none());
@@ -165,7 +165,7 @@ fn skips_storage_with_unexpected_unit() {
 #[test]
 fn computes_correct_values_for_linux_arm() {
     let mut bill = load_test_bill();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
 
     let item = &bill.usage_items[1];
     assert_eq!(item.sku, "Actions Linux ARM");
@@ -187,7 +187,7 @@ fn computes_correct_values_for_linux_arm() {
 #[test]
 fn computes_correct_values_for_linux() {
     let mut bill = load_test_bill();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
 
     let item = &bill.usage_items[2];
     assert_eq!(item.sku, "Actions Linux");
@@ -209,14 +209,14 @@ fn computes_correct_values_for_linux() {
 #[test]
 fn empty_bill_produces_no_errors() {
     let mut bill = ActionsBill::from_json("{\"usageItems\":[]}").unwrap();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
     assert!(bill.usage_items.is_empty());
 }
 
 #[test]
 fn splits_water_between_cooling_and_electricity() {
     let mut bill = load_test_bill();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
 
     let item = bill
         .usage_items
@@ -237,7 +237,7 @@ fn splits_water_between_cooling_and_electricity() {
 #[test]
 fn no_water_without_energy_estimate() {
     let mut bill = load_test_bill();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
     for item in bill
         .usage_items
         .iter()
@@ -259,7 +259,7 @@ fn computes_correct_values_for_macos() {
          "discountAmount":0.0,"netAmount":0.0,"organizationName":"o","repositoryName":"r"}
     ]}"#;
     let mut bill = ActionsBill::from_json(json).unwrap();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
 
     for (item, power_w) in bill.usage_items.iter().zip([8.47, 23.35]) {
         let (expected_energy, expected_co2) = expected_values(item.quantity, power_w);

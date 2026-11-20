@@ -22,7 +22,7 @@ enum Source {
     Jobs,
 }
 
-/// Aspen - GitHub Actions Carbon Estimator
+/// Aspen - GitHub Actions Impacts Estimator
 #[derive(Parser)]
 #[command(version, about)]
 struct Cli {
@@ -64,12 +64,12 @@ struct Cli {
     #[arg(long, env = "INPUT_DAY", value_parser = clap::value_parser!(u32).range(1..=31))]
     day: Option<u32>,
 
-    /// Path where the carbon estimate report will be saved
+    /// Path where the impacts estimate report will be saved
     #[arg(
         short = 'O',
         long,
         env = "INPUT_OUTPUT_PATH",
-        default_value = "./carbon-estimate.json"
+        default_value = "./impacts-estimate.json"
     )]
     output: String,
 
@@ -184,9 +184,9 @@ fn main() -> Result<()> {
         );
     }
     if !filter_mode {
-        println!("Estimating carbon footprint...");
+        println!("Estimating impacts...");
     }
-    estimator::calculate_carbon_impact(&mut bill);
+    estimator::calculate_impacts(&mut bill);
 
     let json = bill.to_json()?;
 
@@ -204,7 +204,7 @@ fn main() -> Result<()> {
             fs::create_dir_all(parent)?;
         }
         fs::write(&cli.output, &json)?;
-        println!("Carbon estimate saved to: {}", cli.output);
+        println!("Impacts estimate saved to: {}", cli.output);
         if let Some(path) = cli.badge.as_deref().filter(|s| !s.is_empty()) {
             if let Some(parent) = Path::new(path).parent() {
                 fs::create_dir_all(parent)?;

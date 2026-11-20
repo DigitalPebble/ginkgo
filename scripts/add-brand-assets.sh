@@ -46,8 +46,8 @@ SVG
 # 1280 x 640 GitHub social preview. Export to PNG before uploading: GitHub does
 # not accept SVG for social previews.
 cat > "$OUT/aspen-social.svg" <<'SVG'
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Aspen — GitHub Actions carbon estimator">
-  <title>Aspen — GitHub Actions carbon estimator</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Aspen — GitHub Actions impacts estimator">
+  <title>Aspen — GitHub Actions impacts estimator</title>
   <rect width="1280" height="640" fill="#F6F4EF"/>
   <g transform="translate(168 232) scale(1.5)">
     <ellipse cx="44" cy="44" rx="17" ry="14" transform="rotate(-12 44 44)" fill="#B3BCC2"/>
@@ -60,7 +60,7 @@ cat > "$OUT/aspen-social.svg" <<'SVG'
         font-size="132" font-weight="500" letter-spacing="-4">aspen</text>
   <text x="434" y="420" fill="#4A5560"
         font-family="Inter, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif"
-        font-size="40" font-weight="400" letter-spacing="0">GitHub Actions carbon estimator</text>
+        font-size="40" font-weight="400" letter-spacing="0">GitHub Actions impacts estimator</text>
 </svg>
 SVG
 

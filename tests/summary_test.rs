@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use aspen::estimator::calculate_carbon_impact;
+use aspen::estimator::calculate_impacts;
 use aspen::model::ActionsBill;
 use aspen::summary::{fmt_co2, fmt_energy, step_outputs, to_markdown, totals};
 
 fn estimated_bill() -> ActionsBill {
     let mut bill = ActionsBill::from_json(include_str!("actions_bill.json")).unwrap();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
     bill
 }
 
@@ -65,7 +65,7 @@ fn lists_runners_without_estimate() {
         "grossAmount":0.0,"discountAmount":0.0,"netAmount":0.0,
         "organizationName":"o","repositoryName":"r"}]}"#;
     let mut bill = ActionsBill::from_json(json).unwrap();
-    calculate_carbon_impact(&mut bill);
+    calculate_impacts(&mut bill);
     let md = to_markdown(&bill);
     assert!(md.contains("Not estimated"));
     assert!(md.contains("Actions macOS 12-core"));

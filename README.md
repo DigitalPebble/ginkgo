@@ -1,11 +1,11 @@
 <img src="resources/brand/aspen-icon.svg" width="96" alt="aspen">
 
-# Aspen - GitHub Actions Carbon Estimator
+# Aspen - GitHub Actions Impacts Estimator
 
 [![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge.json)](https://github.com/DigitalPebble/aspen)
 [![CI CO2eq billing](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge-billing.json)](https://github.com/DigitalPebble/aspen)
 
-Aspen estimates the energy use, carbon emissions and water consumption of GitHub Actions for a repository or an organisation. It reads either the jobs of your workflow runs or the GitHub billing report, applies a carbon estimation model (see [Methodology](#methodology)) and writes a JSON report, a markdown summary and an optional badge.
+Aspen estimates the energy use, carbon emissions and water consumption of GitHub Actions for a repository or an organisation. It reads either the jobs of your workflow runs or the GitHub billing report, applies an estimation model (see [Methodology](#methodology)) and writes a JSON report, a markdown summary and an optional badge.
 
 It runs in three ways:
 
@@ -56,7 +56,7 @@ The action analyses the jobs of this repository's workflow runs with the built-i
 | `source` | `jobs` | `jobs` or `billing` |
 | `github_token` | `${{ github.token }}` | With `jobs`, `actions: read` is enough. With `billing`, an organisation token (see step 2) |
 | `days` | `30` | Days of usage to analyse, up to today. The same period for both sources, so their figures are comparable |
-| `output_path` | `carbon-estimate.json` | Where the report is saved |
+| `output_path` | `impacts-estimate.json` | Where the report is saved |
 | `badge_path` | `badge.json` | Where the badge JSON is written (empty to skip) |
 | `publish_badge` | `false` | Commit the badge file to `badge_branch` of this repository (needs `contents: write`) |
 | `badge_branch` | `badges` | Branch the badge is published to. Created if missing |
@@ -81,7 +81,7 @@ steps:
     id: aspen
   - uses: actions/upload-artifact@v4
     with:
-      name: carbon-estimate
+      name: impacts-estimate
       path: ${{ steps.aspen.outputs.report-path }}
 ```
 
@@ -199,7 +199,7 @@ aspen --organization your-org
 
 By default this covers the last 30 days, like the `jobs` source; change it with `--days`. For a calendar period instead, use `--year`, `--month` and `--day`, e.g. `--year 2026 --month 10` for October.
 
-The output is written to `./carbon-estimate.json`, or to the path given with `--output`. Both values can also come from environment variables (see the options below).
+The output is written to `./impacts-estimate.json`, or to the path given with `--output`. Both values can also come from environment variables (see the options below).
 
 To use the jobs of a single repository instead, with no administrator access:
 
@@ -217,11 +217,11 @@ aspen --file gh_bill.json --summary summary.md
 With no arguments, Aspen reads a billing JSON from stdin and writes the result to stdout. Errors go to stderr.
 
 ```bash
-gh api /organizations/$ORG/settings/billing/usage | aspen > carbon-estimate.json
+gh api /organizations/$ORG/settings/billing/usage | aspen > impacts-estimate.json
 ```
 
 ```
-Aspen - GitHub Actions Carbon Estimator
+Aspen - GitHub Actions Impacts Estimator
 
 Usage: aspen [OPTIONS]
 
@@ -235,7 +235,7 @@ Options:
       --badge <BADGE>                  Path where a shields.io endpoint badge (JSON) will be written [env: INPUT_BADGE_PATH=]
   -r, --repository <REPOSITORY>        Restrict the report to a single repository ("owner/name"); the organization is derived from it [env: INPUT_REPOSITORY=]
   -o, --organization <ORGANIZATION>    GitHub organization name [env: INPUT_ORGANIZATION=]
-  -O, --output <OUTPUT>                Path where the carbon estimate report will be saved [env: INPUT_OUTPUT_PATH=] [default: ./carbon-estimate.json]
+  -O, --output <OUTPUT>                Path where the impacts estimate report will be saved [env: INPUT_OUTPUT_PATH=] [default: ./impacts-estimate.json]
   -s, --summary <SUMMARY>              File to append a markdown summary to (totals, per repository, per workflow with `jobs`, and per SKU) [env: GITHUB_STEP_SUMMARY=]
   -h, --help                           Print help
   -V, --version                        Print version

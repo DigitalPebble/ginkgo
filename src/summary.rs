@@ -80,7 +80,7 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
     }
 
     let mut md = String::new();
-    md.push_str("## 🌳 Aspen - GitHub Actions carbon and water estimate\n\n");
+    md.push_str("## 🌳 Aspen - GitHub Actions impacts estimate\n\n");
 
     if by_repo.is_empty() {
         md.push_str("No usage with an available estimate was found.\n\n");

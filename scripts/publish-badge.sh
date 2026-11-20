@@ -46,7 +46,7 @@ for attempt in 1 2 3; do
     echo "Badge $NAME unchanged on $BADGE_BRANCH"
     exit 0
   fi
-  git commit --quiet -m "Update carbon badge ($NAME)"
+  git commit --quiet -m "Update impacts badge ($NAME)"
 
   if git push --quiet origin "$BADGE_BRANCH"; then
     echo "Published $NAME to branch $BADGE_BRANCH"

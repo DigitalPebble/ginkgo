@@ -1,4 +1,4 @@
-name: 'Aspen - GitHub Actions Carbon Estimator'
+name: 'Aspen - GitHub Actions Impacts Estimator'
 description: 'Estimate the environmental impact of GitHub Actions for a repository or an organisation.'
 author: 'DigitalPebble'
 
@@ -24,9 +24,9 @@ inputs:
     required: false
     default: '30'
   output_path:
-    description: 'Path where the carbon estimate report will be saved'
+    description: 'Path where the impacts estimate report will be saved'
     required: false
-    default: 'carbon-estimate.json'
+    default: 'impacts-estimate.json'
   badge_path:
     description: >-
       Path where a shields.io endpoint badge (JSON) with the total emissions will be written.
@@ -54,7 +54,7 @@ inputs:
 
 outputs:
   report-path:
-    description: 'Path to the generated carbon estimate report'
+    description: 'Path to the generated impacts estimate report'
     value: ${{ steps.report.outputs.report-path }}
   badge-path:
     description: 'Path to the generated shields.io endpoint badge'

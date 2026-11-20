@@ -1,15 +1,15 @@
-name: Carbon estimate (billing)
+name: Impacts estimate (billing)
 
-# Same as carbon.yml, but from the organisation billing API: data as billed,
+# Same as impacts.yml, but from the organisation billing API: data as billed,
 # gold badge. The token can read billing data for the whole organisation, so
 # this workflow is restricted (see the README, "Security considerations"):
 #   - it only runs on a schedule or by hand, never on pull requests
-#   - the secret lives in the `carbon-billing` environment, limited to `main`
+#   - the secret lives in the `impacts-billing` environment, limited to `main`
 #     with required reviewers if you want an approval before each run
 #   - Aspen drops the rows of every other repository before writing anything
 on:
   schedule:
-    - cron: '0 7 * * 1' # an hour after carbon.yml, both push to the `badges` branch
+    - cron: '0 7 * * 1' # an hour after impacts.yml, both push to the `badges` branch
   workflow_dispatch:
 
 permissions:
@@ -18,14 +18,14 @@ permissions:
 jobs:
   estimate:
     runs-on: ubuntu-latest
-    environment: carbon-billing
+    environment: impacts-billing
     steps:
-      - name: Aspen - GitHub Actions Carbon Estimator
+      - name: Aspen - GitHub Actions Impacts Estimator
         id: aspen
         uses: DigitalPebble/aspen@v1
         with:
           source: billing
           github_token: ${{ secrets.ORG_BILLING_TOKEN }}
-          output_path: carbon-estimate-billing.json
+          output_path: impacts-estimate-billing.json
           badge_path: badge-billing.json
           publish_badge: true
