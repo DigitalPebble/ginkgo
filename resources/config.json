@@ -23,12 +23,12 @@
         "description": "4-vCPU ARM64 Windows VM"
       },
       "macos": {
-        "value": -1,
-        "description": "Apple Silicon M-series (3-vCPU, very efficient) - TODO find estimates"
+        "value": 8.47,
+        "description": "Standard 3-vCPU Apple silicon (M1) macOS runner, 3/8 of a mac2.metal host from BoaviztAPI (22.59 W)"
       },
-      "macos-13": {
-        "value": -1,
-        "description": "Intel-based macOS (older, less efficient) - TODO find estimates"
+      "macos-intel": {
+        "value": 23.35,
+        "description": "Standard 4-vCPU Intel macOS runner, 4/12 of a mac1.metal host from BoaviztAPI (70.06 W)"
       }
     }
   },

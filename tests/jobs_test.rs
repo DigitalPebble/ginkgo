@@ -28,7 +28,31 @@ fn maps_labels_to_billing_skus() {
         sku_for_labels(&labels(&["windows-latest"])),
         "Actions Windows"
     );
-    assert_eq!(sku_for_labels(&labels(&["macos-14"])), "Actions macOS");
+    assert_eq!(
+        sku_for_labels(&labels(&["macos-14"])),
+        "Actions macOS 3-core"
+    );
+    assert_eq!(
+        sku_for_labels(&labels(&["macos-latest"])),
+        "Actions macOS 3-core"
+    );
+    assert_eq!(
+        sku_for_labels(&labels(&["macos-15-intel"])),
+        "Actions macOS 4-core"
+    );
+    assert_eq!(
+        sku_for_labels(&labels(&["macos-13"])),
+        "Actions macOS 4-core"
+    );
+    // larger runners have other hardware and are not estimated
+    assert_eq!(
+        sku_for_labels(&labels(&["macos-15-xlarge"])),
+        "macos-15-xlarge"
+    );
+    assert_eq!(
+        sku_for_labels(&labels(&["macos-26-large"])),
+        "macos-26-large"
+    );
     assert_eq!(
         sku_for_labels(&labels(&["self-hosted", "linux"])),
         "Self-hosted"

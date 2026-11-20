@@ -54,6 +54,8 @@ fn get_runner_power(config: &Config, sku: &str) -> Option<f64> {
         "Actions Linux Slim" => "ubuntu-slim",
         "Actions Windows ARM" => "windows-arm",
         "Actions Windows" => "windows",
+        "Actions macOS 3-core" => "macos",
+        "Actions macOS 4-core" => "macos-intel",
         _ => return None,
     };
     config.runner_power_consumption.get(runner).copied()

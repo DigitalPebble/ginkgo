@@ -47,7 +47,14 @@ pub fn sku_for_labels(labels: &[String]) -> String {
         }
         .to_string()
     } else if any("macos") {
-        "Actions macOS".to_string()
+        // larger runners (-large, -xlarge) have other hardware, so they get no estimate
+        if any("large") {
+            labels[0].clone()
+        } else if any("intel") || any("macos-13") {
+            "Actions macOS 4-core".to_string()
+        } else {
+            "Actions macOS 3-core".to_string()
+        }
     } else {
         labels
             .first()
