@@ -55,6 +55,41 @@ fn sets_energy_and_co2_on_minute_items() {
 }
 
 const SSD_WH_PER_TB_HOUR: f64 = 1.2;
+const HDD_WH_PER_TB_HOUR: f64 = 0.65;
+const ACTIONS_STORAGE_REPLICATION: f64 = 1.0;
+const PACKAGES_STORAGE_REPLICATION: f64 = 3.0;
+
+/// Builds a single usage item of `sku` billed in gigabyte hours.
+fn storage_bill(product: &str, sku: &str, gigabyte_hours: f64) -> ActionsBill {
+    let json = format!(
+        r#"{{"usageItems":[{{"date":"2026-01-01T00:00:00Z","product":"{product}",
+        "sku":"{sku}","quantity":{gigabyte_hours},"unitType":"GigabyteHours","pricePerUnit":0.0,
+        "grossAmount":0.0,"discountAmount":0.0,"netAmount":0.0,
+        "organizationName":"o","repositoryName":"r"}}]}}"#
+    );
+    ActionsBill::from_json(&json).unwrap()
+}
+
+fn assert_storage_values(sku: &str, wh_per_tb_hour: f64, replication: f64) {
+    let gigabyte_hours = 2.533244733;
+    let mut bill = storage_bill("packages", sku, gigabyte_hours);
+    calculate_carbon_impact(&mut bill);
+
+    let item = &bill.usage_items[0];
+    let energy_wh = wh_per_tb_hour * (gigabyte_hours / 1000.0) * replication * PUE;
+    let co2_g = energy_wh / 1000.0 * GRID_INTENSITY;
+
+    assert_close(
+        &format!("{sku} energy_usage_wh"),
+        item.energy_usage_wh.expect("energy_usage_wh not set"),
+        (energy_wh * 1000.0).round() / 1000.0,
+    );
+    assert_close(
+        &format!("{sku} co2eq_g"),
+        item.co2eq_g.expect("co2eq_g not set"),
+        (co2_g * 1000.0).round() / 1000.0,
+    );
+}
 
 #[test]
 fn computes_correct_values_for_storage() {
@@ -65,7 +100,8 @@ fn computes_correct_values_for_storage() {
     assert_eq!(item.sku, "Actions storage");
     assert_eq!(item.unit_type, "GigabyteHours");
 
-    let energy_wh = SSD_WH_PER_TB_HOUR * (item.quantity / 1000.0) * PUE;
+    let energy_wh =
+        SSD_WH_PER_TB_HOUR * (item.quantity / 1000.0) * ACTIONS_STORAGE_REPLICATION * PUE;
     let co2_g = energy_wh / 1000.0 * GRID_INTENSITY;
 
     assert_close(
@@ -78,6 +114,34 @@ fn computes_correct_values_for_storage() {
         item.co2eq_g.expect("co2eq_g not set"),
         (co2_g * 1000.0).round() / 1000.0,
     );
+}
+
+#[test]
+fn computes_correct_values_for_packages_storage() {
+    assert_storage_values(
+        "Packages storage",
+        HDD_WH_PER_TB_HOUR,
+        PACKAGES_STORAGE_REPLICATION,
+    );
+}
+
+#[test]
+fn matches_storage_sku_regardless_of_case() {
+    assert_storage_values(
+        "PACKAGES STORAGE",
+        HDD_WH_PER_TB_HOUR,
+        PACKAGES_STORAGE_REPLICATION,
+    );
+}
+
+#[test]
+fn skips_storage_sku_missing_from_config() {
+    let mut bill = storage_bill("copilot", "Copilot storage", 1000.0);
+    calculate_carbon_impact(&mut bill);
+
+    let item = &bill.usage_items[0];
+    assert!(item.energy_usage_wh.is_none());
+    assert!(item.co2eq_g.is_none());
 }
 
 #[test]

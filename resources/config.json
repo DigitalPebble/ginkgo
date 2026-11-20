@@ -33,10 +33,29 @@
     }
   },
   "storage_energy": {
-    "description": "Energy consumption of storage in Watt-hours per Terabyte-hour",
+    "description": "Energy consumption of storage in Watt-hours per Terabyte-hour, from https://opensourcegreenops.cloud/modules/#storage",
     "ssd": {
       "value": 1.2,
       "description": "SSD storage"
+    },
+    "hdd": {
+      "value": 0.65,
+      "description": "HDD storage, as used by storage as a service like S3"
+    }
+  },
+  "storage": {
+    "description": "SKUs billed in gigabyte hours, with the medium they are assumed to use and the number of copies kept of the data. SKU names are matched in lower case",
+    "skus": {
+      "actions storage": {
+        "medium": "ssd",
+        "replication": 1,
+        "description": "Actions artifacts and caches - replication unknown, counted as a single copy"
+      },
+      "packages storage": {
+        "medium": "hdd",
+        "replication": 3,
+        "description": "GitHub Packages, assumed to behave like object storage and to keep three copies"
+      }
     }
   },
   "grid_carbon_intensity": {

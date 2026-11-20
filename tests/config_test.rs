@@ -57,3 +57,31 @@ fn runner_power_consumption_contains_all_runners() {
         assert_close(&format!("runners[{name}]"), actual, expected);
     }
 }
+
+#[test]
+fn storage_skus_resolve_their_medium_and_replication() {
+    let skus = &Config::instance().storage_skus;
+    assert_eq!(skus.len(), 2, "expected 2 storage SKUs, got {}", skus.len());
+
+    // SKUs are keyed in lower case, and carry the energy of their medium
+    let cases = [
+        ("actions storage", 1.2, 1.0),
+        ("packages storage", 0.65, 3.0),
+    ];
+
+    for (sku, wh_per_tb_hour, replication) in cases {
+        let storage = skus
+            .get(sku)
+            .unwrap_or_else(|| panic!("storage SKU '{sku}' missing from config"));
+        assert_close(
+            &format!("{sku} Wh per terabyte-hour"),
+            storage.wh_per_tb_hour,
+            wh_per_tb_hour,
+        );
+        assert_close(
+            &format!("{sku} replication"),
+            storage.replication,
+            replication,
+        );
+    }
+}

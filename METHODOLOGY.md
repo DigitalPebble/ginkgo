@@ -4,8 +4,11 @@ Aspen estimates the energy use and carbon emissions of GitHub Actions. It does n
 
 ```
 energy (Wh)  = power (W) × minutes / 60 × PUE
+energy (Wh)  = medium (Wh/TBh) × gigabyte hours / 1000 × replication × PUE
 co2eq (g)    = energy (Wh) / 1000 × grid carbon intensity (gCO2eq/kWh)
 ```
+
+The first formula covers the compute SKUs, the second the storage ones.
 
 ## Where the figures live
 
@@ -13,8 +16,11 @@ All the coefficients are in [`resources/config.json`](resources/config.json):
 
 | Key | Value | Unit |
 |---|---|---|
-| `power_consumption.runners.<runner>.value` | see below | Wh |
-| `storage_energy.ssd.value` | 1.2 | Wh per gigabyte hour |
+| `power_consumption.runners.<runner>.value` | see below | W |
+| `storage_energy.ssd.value` | 1.2 | Wh per terabyte hour |
+| `storage_energy.hdd.value` | 0.65 | Wh per terabyte hour |
+| `storage.skus.<sku>.medium` | `ssd` or `hdd` | key into `storage_energy` |
+| `storage.skus.<sku>.replication` | see below | number of copies |
 | `grid_carbon_intensity.value` | 383 | gCO2eq/kWh |
 | `pue.value` | 1.16 | ratio |
 
@@ -88,13 +94,22 @@ These items are still listed in the report, so you can see how many minutes have
 
 ## Storage
 
-Items of the `Actions storage` SKU billed in `GigabyteHours` (billing source only) use an SSD energy factor of 1.2 Wh per terabyte hour, with the same PUE and carbon intensity:
+Items billed in `GigabyteHours` (billing source only) are estimated from the storage medium their SKU is assumed to use and the number of copies kept of the data, with the same PUE and carbon intensity as the runners:
 
 ```
-energy (Wh) = 1.2 × gigabyte hours / 1000 × PUE
+energy (Wh) = medium (Wh/TBh) × gigabyte hours / 1000 × replication × PUE
 ```
 
-Items of that SKU in any other unit are ignored.
+| SKU | Medium | Wh per terabyte hour | Replication |
+|---|---|---|---|
+| `Actions storage` | SSD | 1.2 | 1 |
+| `Packages storage` | HDD | 0.65 | 3 |
+
+The energy figures per terabyte hour come from the [SPRUCE storage module](https://opensourcegreenops.cloud/modules/#storage). Actions artifacts and caches are treated as SSD because they are written and read at build speed. Packages are treated as HDD, since a registry serving downloads behaves more like object storage such as S3.
+
+GitHub does not publish how many copies it keeps of either. Packages are counted as three copies, the usual default for object storage, and Actions storage as one, which keeps it as it was before replication was taken into account. Both are guesses, and the single copy for Actions storage is the weaker of the two. Either can be changed in `storage.skus.<sku>.replication` without touching the code.
+
+SKU names are matched in lower case. A SKU billed in gigabyte hours that is not listed in `storage.skus` gets no estimate, and nor does a listed SKU billed in any other unit.
 
 ## PUE
 
@@ -113,11 +128,18 @@ energy = 4.315 W × 10 / 60 × 1.16 = 0.834 Wh
 co2eq  = 0.834 / 1000 × 383       = 0.320 g
 ```
 
-1,000 gigabyte hours of Actions storage:
+1,000 gigabyte hours of Actions storage, on SSD and counted as a single copy:
 
 ```
-energy = 1.2 × 1000 / 1000 × 1.16 = 1.392 Wh
-co2eq  = 1.392 / 1000 × 383       = 0.533 g
+energy = 1.2 × 1000 / 1000 × 1 × 1.16 = 1.392 Wh
+co2eq  = 1.392 / 1000 × 383           = 0.533 g
+```
+
+1,000 gigabyte hours of Packages storage, on HDD and counted as three copies:
+
+```
+energy = 0.65 × 1000 / 1000 × 3 × 1.16 = 2.262 Wh
+co2eq  = 2.262 / 1000 × 383            = 0.866 g
 ```
 
 ## Outputs
@@ -128,7 +150,8 @@ The badge shows the total over the period, in g or kg CO2eq. Its colour shows wh
 
 ## Limitations
 
-- **Embodied emissions are not included.** Only the electricity used while the runner is busy is counted, not the emissions from manufacturing the hardware.
+- **Embodied emissions are not included.** Only the electricity used while the runner is busy is counted, not the emissions from manufacturing the hardware or the disks.
+- **Storage media and replication are assumed.** GitHub publishes neither, so both come from the defaults of comparable cloud services (see [Storage](#storage)).
 - **Network and artifact transfer are not included.**
 - **CPU load is not known.** Every minute of a given runner type is priced at 50% load (see [Runner power](#runner-power)), whatever the job was actually doing.
 - **The `jobs` source is an approximation.** Durations are rounded up per job and runner types are guessed from labels. The source covers at most 5,000 runs.
