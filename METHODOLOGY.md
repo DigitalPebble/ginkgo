@@ -76,15 +76,29 @@ Each SKU is mapped to a runner in `config.json`:
 
 | SKU | Runner | Power (W) | Basis |
 |---|---|---|---|
-| `Actions Linux` | `ubuntu` | 4.315 | 4 vCPU x86 VM, Azure D4as_v4 |
-| `Actions Linux Slim` | `ubuntu-slim` | 1.078 | a quarter of `ubuntu` |
-| `Actions Linux ARM` | `ubuntu-arm` | 2.157 | 4 vCPU ARM64 VM, Scaleway COPARM1-4C-16G |
-| `Actions Windows` | `windows` | 4.746 | `ubuntu` plus 10% for OS overhead |
-| `Actions Windows ARM` | `windows-arm` | 2.372 | `ubuntu-arm` plus 10% for OS overhead |
+| `Actions Linux` | `ubuntu` | 11.52 | 4 vCPU x86 VM, Azure D4as_v4 |
+| `Actions Linux Slim` | `ubuntu-slim` | 2.88 | a quarter of `ubuntu` |
+| `Actions Linux ARM` | `ubuntu-arm` | 6.66 | 4 vCPU ARM64 VM, Scaleway COPARM1-4C-16G |
+| `Actions Windows` | `windows` | 12.67 | `ubuntu` plus 10% for OS overhead |
+| `Actions Windows ARM` | `windows-arm` | 7.33 | `ubuntu-arm` plus 10% for OS overhead |
 
-The figures come from [BoaviztAPI](https://github.com/Boavizta/boaviztapi) for these cloud instance types. They are not GitHub's own hardware, which is not published. GitHub's standard hosted runners have had 4 vCPUs since December 2023, hence the choice of 4 vCPU instances.
+The figures come from [BoaviztAPI](https://github.com/Boavizta/boaviztapi) for these cloud instance types. See [Reproducing the figures](#reproducing-the-figures) for the commands. They are not GitHub's own hardware, which is not published. GitHub's standard hosted runners have had 4 vCPUs since December 2023, hence the choice of 4 vCPU instances.
 
 The power is the instance's draw at **50% CPU load**. The GitHub APIs give no utilisation figures, so Aspen cannot tell a job compiling flat out from one waiting on the network, and applies the same average load to every minute. 50% sits between the two. A server still draws power when idle, so power does not scale linearly with load. A job running close to 100% for its whole duration will be underestimated, and one that is mostly idle overestimated, but by less than the difference in load suggests.
+
+### Reproducing the figures
+
+With `verbose=true`, BoaviztAPI returns the average power of the instance in watts under `.verbose.avg_power.value`. The calls below use BoaviztAPI 2.6.0 and need `curl` and `jq`. Results may change with new versions of the API, so the version is worth noting when the figures are updated.
+
+```bash
+# ubuntu: 11.5225 W (min 3.28 W, max 18.41 W)
+curl -s 'https://api.boavizta.org/v1/cloud/instance?provider=azure&instance_type=d4as_v4&verbose=true&duration=1&criteria=fe' | jq '.verbose.avg_power.value'
+
+# ubuntu-arm: 6.6631 W (min 2.58 W, max 10.40 W)
+curl -s 'https://api.boavizta.org/v1/cloud/instance?provider=scaleway&instance_type=coparm1-4c-16g&verbose=true&duration=1&criteria=fe' | jq '.verbose.avg_power.value'
+```
+
+The derived runners are `ubuntu-slim` (`ubuntu` / 4), `windows` (`ubuntu` × 1.1) and `windows-arm` (`ubuntu-arm` × 1.1). The values in `config.json` are rounded to two decimals.
 
 ### What is not estimated
 
@@ -156,15 +170,15 @@ Like the grid carbon intensity, both factors are single averages and ignore whic
 A 10 minute job on `ubuntu-latest`:
 
 ```
-energy = 4.315 W × 10 / 60 × 1.16 = 0.834 Wh
-co2eq  = 0.834 / 1000 × 383       = 0.320 g
+energy = 11.52 W × 10 / 60 × 1.16 = 2.227 Wh
+co2eq  = 2.227 / 1000 × 383       = 0.853 g
 ```
 
-The water for the same job, from its 0.834 Wh:
+The water for the same job, from its 2.227 Wh:
 
 ```
-cooling     = 0.834 / 1000 × 0.34   = 0.000284 L
-electricity = 0.834 / 1000 × 3.5781 = 0.002984 L
+cooling     = 2.227 / 1000 × 0.34   = 0.000757 L
+electricity = 2.227 / 1000 × 3.5781 = 0.007969 L
 ```
 
 1,000 gigabyte hours of Actions storage, on SSD and counted as a single copy:

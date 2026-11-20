@@ -41,11 +41,11 @@ fn runner_power_consumption_contains_all_runners() {
     );
 
     let cases = [
-        ("ubuntu", 4.315),
-        ("ubuntu-slim", 1.078),
-        ("ubuntu-arm", 2.157),
-        ("windows", 4.746),
-        ("windows-arm", 2.372),
+        ("ubuntu", 11.52),
+        ("ubuntu-slim", 2.88),
+        ("ubuntu-arm", 6.66),
+        ("windows", 12.67),
+        ("windows-arm", 7.33),
         ("macos", -1.0),
         ("macos-13", -1.0),
     ];
