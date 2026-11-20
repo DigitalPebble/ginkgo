@@ -55,12 +55,11 @@ Aspen lists the completed workflow runs of the repository over the period, then 
 | `ubuntu` or `linux` | `Actions Linux` |
 | `windows`, plus `arm` | `Actions Windows ARM` |
 | `windows` | `Actions Windows` |
-| `macos` and `intel`, or `macos-13` | `Actions macOS 4-core` |
-| `macos` and `large` or `xlarge` | the first label |
-| `macos` | `Actions macOS 3-core` |
+| `macos-15-intel` or `macos-26-intel` | `Actions macOS 4-core` |
+| `macos-latest`, `macos-15`, `macos-26` or `xcode-27` | `Actions macOS 3-core` |
 | anything else | the first label |
 
-Labels of larger runners are usually custom names, so they end up in the last row. The macOS larger runners (`-large`, `-xlarge`) end up there too, since their hardware differs from the standard runners.
+Labels of larger runners are usually custom names, so they end up in the last row. The macOS labels are those of the [standard runners table](https://docs.github.com/en/actions/reference/runners/github-hosted-runners), matched exactly. The macOS larger runners (`-large`, `-xlarge`) and the retired labels (`macos-14`, `macos-13`) are not in it, so they end up in the last row and get no estimate.
 
 ### Checking the input against GitHub
 

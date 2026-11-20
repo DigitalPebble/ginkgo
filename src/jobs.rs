@@ -22,6 +22,13 @@ struct Job {
     labels: Vec<String>,
 }
 
+/// Labels of the standard Intel macOS runners (4 vCPUs), from
+/// <https://docs.github.com/en/actions/reference/runners/github-hosted-runners>.
+const MACOS_INTEL_LABELS: [&str; 2] = ["macos-15-intel", "macos-26-intel"];
+
+/// Labels of the standard Apple silicon (M1) macOS runners (3 vCPUs), from the same page.
+const MACOS_ARM_LABELS: [&str; 4] = ["macos-latest", "macos-15", "macos-26", "xcode-27"];
+
 /// Maps the runner labels of a job to the SKU names used by the billing report.
 pub fn sku_for_labels(labels: &[String]) -> String {
     let lower: Vec<String> = labels.iter().map(|l| l.to_lowercase()).collect();
@@ -30,6 +37,7 @@ pub fn sku_for_labels(labels: &[String]) -> String {
     }
     let any = |needle: &str| lower.iter().any(|l| l.contains(needle));
     let arm = lower.iter().any(|l| l.contains("arm"));
+    let is_any = |names: &[&str]| lower.iter().any(|l| names.contains(&l.as_str()));
     if any("ubuntu-slim") {
         "Actions Linux Slim".to_string()
     } else if any("ubuntu") || any("linux") {
@@ -46,15 +54,10 @@ pub fn sku_for_labels(labels: &[String]) -> String {
             "Actions Windows"
         }
         .to_string()
-    } else if any("macos") {
-        // larger runners (-large, -xlarge) have other hardware, so they get no estimate
-        if any("large") {
-            labels[0].clone()
-        } else if any("intel") || any("macos-13") {
-            "Actions macOS 4-core".to_string()
-        } else {
-            "Actions macOS 3-core".to_string()
-        }
+    } else if is_any(&MACOS_INTEL_LABELS) {
+        "Actions macOS 4-core".to_string()
+    } else if is_any(&MACOS_ARM_LABELS) {
+        "Actions macOS 3-core".to_string()
     } else {
         labels
             .first()
