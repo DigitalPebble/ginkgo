@@ -40,6 +40,22 @@ pub struct UsageItem {
 
     #[serde(rename = "co2eq_g", skip_serializing_if = "Option::is_none")]
     pub co2eq_g: Option<f64>,
+
+    /// Water consumed on site by the data centre cooling, in litres.
+    #[serde(
+        rename = "water_cooling_l",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub water_cooling_l: Option<f64>,
+
+    /// Water consumed by the generation of the electricity used, in litres.
+    #[serde(
+        rename = "water_electricity_production_l",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub water_electricity_production_l: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

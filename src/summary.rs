@@ -10,13 +10,19 @@ pub struct Totals {
     pub energy_wh: f64,
     pub co2eq_g: f64,
     pub minutes: f64,
+    /// Water consumed on site by the cooling of the data centre, in litres
+    pub water_cooling_l: f64,
+    /// Water consumed by the generation of the electricity used, in litres
+    pub water_electricity_l: f64,
 }
 
 impl Totals {
-    fn add(&mut self, energy_wh: f64, co2eq_g: f64, minutes: f64) {
+    fn add(&mut self, energy_wh: f64, co2eq_g: f64, item: &UsageItem) {
         self.energy_wh += energy_wh;
         self.co2eq_g += co2eq_g;
-        self.minutes += minutes;
+        self.minutes += item.quantity;
+        self.water_cooling_l += item.water_cooling_l.unwrap_or(0.0);
+        self.water_electricity_l += item.water_electricity_production_l.unwrap_or(0.0);
     }
 }
 
@@ -25,7 +31,7 @@ pub fn totals(bill: &ActionsBill) -> Totals {
     let mut totals = Totals::default();
     for item in &bill.usage_items {
         if let (Some(energy), Some(co2)) = (item.energy_usage_wh, item.co2eq_g) {
-            totals.add(energy, co2, item.quantity);
+            totals.add(energy, co2, item);
         }
     }
     totals
@@ -35,8 +41,8 @@ pub fn totals(bill: &ActionsBill) -> Totals {
 pub fn step_outputs(bill: &ActionsBill) -> String {
     let t = totals(bill);
     format!(
-        "total_co2eq_g={:.3}\ntotal_energy_wh={:.3}\n",
-        t.co2eq_g, t.energy_wh
+        "total_co2eq_g={:.3}\ntotal_energy_wh={:.3}\ntotal_water_cooling_l={:.3}\ntotal_water_electricity_l={:.3}\n",
+        t.co2eq_g, t.energy_wh, t.water_cooling_l, t.water_electricity_l
     )
 }
 
@@ -53,24 +59,18 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
         match (item.energy_usage_wh, item.co2eq_g) {
             (Some(energy), Some(co2)) => {
                 if let Some(key) = workflow_key(item) {
-                    by_workflow
-                        .entry(key)
-                        .or_default()
-                        .add(energy, co2, item.quantity);
+                    by_workflow.entry(key).or_default().add(energy, co2, item);
                 }
                 let repo = if item.repository_name.is_empty() {
                     "(none)"
                 } else {
                     item.repository_name.as_str()
                 };
-                by_repo
-                    .entry(repo)
-                    .or_default()
-                    .add(energy, co2, item.quantity);
+                by_repo.entry(repo).or_default().add(energy, co2, item);
                 by_sku
                     .entry(item.sku.as_str())
                     .or_default()
-                    .add(energy, co2, item.quantity);
+                    .add(energy, co2, item);
             }
             _ if item.unit_type.eq_ignore_ascii_case("minutes") => {
                 *not_estimated.entry(item.sku.as_str()).or_default() += item.quantity;
@@ -80,17 +80,19 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
     }
 
     let mut md = String::new();
-    md.push_str("## 🌳 Aspen - GitHub Actions carbon estimate\n\n");
+    md.push_str("## 🌳 Aspen - GitHub Actions carbon and water estimate\n\n");
 
     if by_repo.is_empty() {
         md.push_str("No usage with an available estimate was found.\n\n");
     } else {
-        md.push_str("| Minutes | Energy | CO₂eq |\n|---:|---:|---:|\n");
+        md.push_str("| Minutes | Energy | CO₂eq | Water, cooling | Water, electricity |\n|---:|---:|---:|---:|---:|\n");
         md.push_str(&format!(
-            "| {:.0} | {} | {} |\n\n",
+            "| {:.0} | {} | {} | {} | {} |\n\n",
             total.minutes,
             fmt_energy(total.energy_wh),
-            fmt_co2(total.co2eq_g)
+            fmt_co2(total.co2eq_g),
+            fmt_water(total.water_cooling_l),
+            fmt_water(total.water_electricity_l)
         ));
 
         md.push_str(&breakdown_table(
@@ -120,7 +122,8 @@ pub fn to_markdown(bill: &ActionsBill) -> String {
 
     md.push_str(
         "<sub>Estimates by [Aspen](https://github.com/DigitalPebble/aspen) \
-         based on billed minutes. Need help with GreenOps? \
+         based on billed minutes. Water is consumed, not withdrawn: cooling is \
+         evaporated on site, electricity is the water used to generate the power. Need help with GreenOps? \
          Get in touch with [DigitalPebble](https://digitalpebble.com/).</sub>\n",
     );
     md
@@ -174,23 +177,25 @@ fn breakdown_table<K: AsRef<str> + Ord>(
         _ => format!("### By {}\n\n", label.to_lowercase()),
     };
     out.push_str(&format!(
-        "| {} | Minutes | Energy | CO₂eq |\n|---|---:|---:|---:|\n",
+        "| {} | Minutes | Energy | CO₂eq | Water, cooling | Water, electricity |\n|---|---:|---:|---:|---:|---:|\n",
         label
     ));
 
     let shown = limit.unwrap_or(sorted.len());
     for (name, t) in sorted.iter().take(shown) {
         out.push_str(&format!(
-            "| {} | {:.0} | {} | {} |\n",
+            "| {} | {:.0} | {} | {} | {} | {} |\n",
             name.as_ref(),
             t.minutes,
             fmt_energy(t.energy_wh),
-            fmt_co2(t.co2eq_g)
+            fmt_co2(t.co2eq_g),
+            fmt_water(t.water_cooling_l),
+            fmt_water(t.water_electricity_l)
         ));
     }
     if sorted.len() > shown {
         let rest = sorted.len() - shown;
-        out.push_str(&format!("| _{} more…_ | | | |\n", rest));
+        out.push_str(&format!("| _{} more…_ | | | | | |\n", rest));
     }
     out.push('\n');
     out
@@ -237,5 +242,16 @@ pub fn fmt_energy(wh: f64) -> String {
         format!("{:.2} kWh", wh / 1000.0)
     } else {
         format!("{:.1} Wh", wh)
+    }
+}
+
+/// Litres, switching to millilitres for small volumes and cubic metres for large ones.
+pub fn fmt_water(litres: f64) -> String {
+    if litres >= 1000.0 {
+        format!("{:.2} m³", litres / 1000.0)
+    } else if litres >= 1.0 {
+        format!("{:.2} L", litres)
+    } else {
+        format!("{:.1} mL", litres * 1000.0)
     }
 }
