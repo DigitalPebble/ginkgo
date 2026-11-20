@@ -5,7 +5,7 @@ use aspen::model::ActionsBill;
 
 // Constants matching resources/config.json
 const PUE: f64 = 1.16;
-const GRID_INTENSITY: f64 = 383.0;
+const GRID_INTENSITY: f64 = 384.0;
 
 fn load_test_bill() -> ActionsBill {
     let json = include_str!("actions_bill.json");

@@ -23,7 +23,7 @@ All the coefficients are in [`resources/config.json`](resources/config.json):
 | `storage_energy.hdd.value` | 0.65 | Wh per terabyte hour |
 | `storage.skus.<sku>.medium` | `ssd` or `hdd` | key into `storage_energy` |
 | `storage.skus.<sku>.replication` | see below | number of copies |
-| `grid_carbon_intensity.value` | 383 | gCO2eq/kWh |
+| `grid_carbon_intensity.value` | 384 | gCO2eq/kWh |
 | `pue.value` | 1.16 | ratio |
 | `wue.value` | 0.34 | litres per kWh |
 | `wcf.value` | 3.5781 | litres per kWh |
@@ -135,7 +135,7 @@ The Power Usage Effectiveness accounts for cooling, power distribution and other
 
 ## Grid carbon intensity
 
-Aspen uses 383 gCO2eq/kWh, the average for the US in 2024 from [Ember](https://ember-energy.org). GitHub does not say which Azure regions its runners use, but most of them are in the US. The figure is a yearly average and does not reflect the time of day a job ran.
+Aspen uses 384 gCO2eq/kWh, the average for the US in 2025 from [Ember](https://ember-energy.org). GitHub does not say which Azure regions its runners use, but most of them are in the US. The figure is a yearly average and does not reflect the time of day a job ran.
 
 ## Water
 
@@ -171,7 +171,7 @@ A 10 minute job on `ubuntu-latest`:
 
 ```
 energy = 11.52 W × 10 / 60 × 1.16 = 2.227 Wh
-co2eq  = 2.227 / 1000 × 383       = 0.853 g
+co2eq  = 2.227 / 1000 × 384       = 0.855 g
 ```
 
 The water for the same job, from its 2.227 Wh:
@@ -185,14 +185,14 @@ electricity = 2.227 / 1000 × 3.5781 = 0.007969 L
 
 ```
 energy = 1.2 × 1000 / 1000 × 1 × 1.16 = 1.392 Wh
-co2eq  = 1.392 / 1000 × 383           = 0.533 g
+co2eq  = 1.392 / 1000 × 384           = 0.535 g
 ```
 
 1,000 gigabyte hours of Packages storage, on HDD and counted as three copies:
 
 ```
 energy = 0.65 × 1000 / 1000 × 3 × 1.16 = 2.262 Wh
-co2eq  = 2.262 / 1000 × 383            = 0.866 g
+co2eq  = 2.262 / 1000 × 384            = 0.869 g
 ```
 
 ## Outputs
