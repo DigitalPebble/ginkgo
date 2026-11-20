@@ -179,10 +179,22 @@ cargo install --path .
 
 ### Usage
 
+The token is read from the `INPUT_GITHUB_TOKEN` environment variable. There is no `--token` option on purpose: a value passed on the command line shows up in the process list, in your shell history and in the output of tools such as `cargo run`. To type or paste it without it being echoed or stored in your history:
+
+```bash
+read -rs INPUT_GITHUB_TOKEN && export INPUT_GITHUB_TOKEN
+```
+
+Or load it from a file only you can read (`chmod 600`), kept outside the repository:
+
+```bash
+export INPUT_GITHUB_TOKEN=$(< ~/.config/aspen/token)
+```
+
 Fetch the billing report of your organisation and enrich it:
 
 ```bash
-aspen --token ghp_... --organization your-org
+aspen --organization your-org
 ```
 
 By default this covers the last 30 days, like the `jobs` source; change it with `--days`. For a calendar period instead, use `--year`, `--month` and `--day`, e.g. `--year 2026 --month 10` for October.
@@ -192,7 +204,7 @@ The output is written to `./carbon-estimate.json`, or to the path given with `--
 To use the jobs of a single repository instead, with no administrator access:
 
 ```bash
-aspen --source jobs --repository your-org/your-repo --token ghp_... --days 30
+aspen --source jobs --repository your-org/your-repo --days 30
 ```
 
 To work from a saved billing file, using the [GH CLI](https://cli.github.com/):
@@ -215,7 +227,6 @@ Usage: aspen [OPTIONS]
 
 Options:
   -f, --file <FILE>                    Path to a local billing JSON file (instead of fetching from GitHub API)
-  -t, --token <TOKEN>                  GitHub token: `actions: read` on the repository for `jobs`, organization Administration (read) for `billing` [env: INPUT_GITHUB_TOKEN=]
   --source <SOURCE>                    Where to get the usage data from: `billing` (default) or `jobs` [env: INPUT_SOURCE=]
       --days <DAYS>                    Days of usage to analyse, up to today (billing source: ignored when --year, --month or --day is set) [env: INPUT_DAYS=] [default: 30]
       --year <YEAR>                    Year of the billing report (billing source only; replaces --days) [env: INPUT_YEAR=]

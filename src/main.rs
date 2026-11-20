@@ -30,8 +30,10 @@ struct Cli {
     #[arg(short, long)]
     file: Option<String>,
 
-    /// GitHub token: `actions: read` on the repository for `jobs`, organization Administration (read) for `billing`
-    #[arg(short, long, env = "INPUT_GITHUB_TOKEN")]
+    /// GitHub token, read only from the INPUT_GITHUB_TOKEN environment variable so that it
+    /// never shows up in the process list or the shell history: `actions: read` on the
+    /// repository for `jobs`, organization Administration (read) for `billing`
+    #[arg(skip = std::env::var("INPUT_GITHUB_TOKEN").ok())]
     token: Option<String>,
 
     /// GitHub organization name
@@ -135,7 +137,7 @@ fn main() -> Result<()> {
             .token
             .as_deref()
             .filter(|s| !s.is_empty())
-            .context("GitHub token is required (set --token or INPUT_GITHUB_TOKEN)")?;
+            .context("GitHub token is required (set INPUT_GITHUB_TOKEN)")?;
         let (owner, name) = repo
             .as_ref()
             .context("--repository is required with --source jobs")?;
@@ -146,7 +148,7 @@ fn main() -> Result<()> {
         bill
     } else {
         let token = cli.token.as_deref().filter(|s| !s.is_empty()).context(
-            "GitHub token is required when not using --file (set --token or INPUT_GITHUB_TOKEN)",
+            "GitHub token is required when not using --file (set INPUT_GITHUB_TOKEN)",
         )?;
         let organization = repo
             .as_ref()
