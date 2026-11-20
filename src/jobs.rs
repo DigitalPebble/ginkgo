@@ -87,6 +87,8 @@ pub fn items_from_jobs(json: &str, owner: &str, repo: &str) -> anyhow::Result<Ve
             workflow_path: None,
             energy_usage_wh: None,
             co2eq_g: None,
+            water_cooling_l: None,
+            water_electricity_production_l: None,
         });
     }
     Ok(items)

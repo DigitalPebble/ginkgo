@@ -1,14 +1,16 @@
 # Methodology
 
-Aspen estimates the energy use and carbon emissions of GitHub Actions. It does not measure anything on the runner. It takes the minutes a runner was used (or the storage billed), multiplies them by an estimated power draw, adds the data centre overhead and converts the energy to emissions with an average grid carbon intensity.
+Aspen estimates the energy use, carbon emissions and water consumption of GitHub Actions. It does not measure anything on the runner. It takes the minutes a runner was used (or the storage billed), multiplies them by an estimated power draw, adds the data centre overhead and converts the energy to emissions with an average grid carbon intensity.
 
 ```
 energy (Wh)  = power (W) × minutes / 60 × PUE
 energy (Wh)  = medium (Wh/TBh) × gigabyte hours / 1000 × replication × PUE
 co2eq (g)    = energy (Wh) / 1000 × grid carbon intensity (gCO2eq/kWh)
+water cooling (L)     = energy (Wh) / 1000 × WUE (L/kWh)
+water electricity (L) = energy (Wh) / 1000 × WCF (L/kWh)
 ```
 
-The first formula covers the compute SKUs, the second the storage ones.
+The first formula covers the compute SKUs, the second the storage ones. The energy is the same for both and already includes the PUE.
 
 ## Where the figures live
 
@@ -23,6 +25,8 @@ All the coefficients are in [`resources/config.json`](resources/config.json):
 | `storage.skus.<sku>.replication` | see below | number of copies |
 | `grid_carbon_intensity.value` | 383 | gCO2eq/kWh |
 | `pue.value` | 1.16 | ratio |
+| `wue.value` | 0.34 | litres per kWh |
+| `wcf.value` | 3.5781 | litres per kWh |
 
 The file is embedded in the binary at compile time (see [`src/config.rs`](src/config.rs)), so changing a value means rebuilding Aspen. They cannot be overridden at run time yet.
 
@@ -119,6 +123,34 @@ The Power Usage Effectiveness accounts for cooling, power distribution and other
 
 Aspen uses 383 gCO2eq/kWh, the average for the US in 2024 from [Ember](https://ember-energy.org). GitHub does not say which Azure regions its runners use, but most of them are in the US. The figure is a yearly average and does not reflect the time of day a job ran.
 
+## Water
+
+Aspen reports the water **consumed**, meaning water that evaporates and does not return to its source, rather than water withdrawn. The two sources are reported separately, since they happen in different places and are not equally easy to act on.
+
+### Cooling
+
+Water evaporated on site by the data centre cooling systems, computed from the Water Usage Effectiveness (WUE), the litres consumed per kWh of IT energy:
+
+```
+water_cooling_l = energy (kWh) × WUE
+```
+
+Aspen uses 0.34 L/kWh, the figure [reported by Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for its data centres in the Americas, which is also the value [SPRUCE](https://github.com/DigitalPebble/spruce) applies to the US Azure regions. The energy already includes the PUE, so the PUE is not applied again.
+
+### Electricity generation
+
+Water consumed by the power plants that produce the electricity, computed from the Water Consumption Factor (WCF), the litres consumed per kWh generated:
+
+```
+water_electricity_production_l = energy (kWh) × WCF
+```
+
+Aspen uses 3.5781 L/kWh, the average of the [WRI](https://www.wri.org/data/dataset-guidance-calculating-water-use-embedded-purchased-electricity) factors that SPRUCE holds for the ten US Azure regions (`wcf.csv`), which range from 1.27 to 9.48. It is close to the 3.1 L/kWh quoted by [savethe.ai](https://savethe.ai/water/) and the 4.3 L/kWh in [Construction Physics](https://www.construction-physics.com/p/i-was-wrong-about-data-center-water). Other methodologies fold both sources into one figure (for example [tokenclimate](https://tokenclimate.com/en/methodology), which uses `WUE + PUE × EWIF`). Aspen keeps them apart.
+
+Electricity generation is the larger share, about ten times the cooling figure with these coefficients. It also depends on the grid and not on the data centre, so it falls as the grid moves to wind and solar.
+
+Like the grid carbon intensity, both factors are single averages and ignore which region a job ran in. Water stress is not taken into account, so a litre in a dry region counts the same as one elsewhere.
+
 ## Worked example
 
 A 10 minute job on `ubuntu-latest`:
@@ -126,6 +158,13 @@ A 10 minute job on `ubuntu-latest`:
 ```
 energy = 4.315 W × 10 / 60 × 1.16 = 0.834 Wh
 co2eq  = 0.834 / 1000 × 383       = 0.320 g
+```
+
+The water for the same job, from its 0.834 Wh:
+
+```
+cooling     = 0.834 / 1000 × 0.34   = 0.000284 L
+electricity = 0.834 / 1000 × 3.5781 = 0.002984 L
 ```
 
 1,000 gigabyte hours of Actions storage, on SSD and counted as a single copy:
@@ -144,7 +183,7 @@ co2eq  = 2.262 / 1000 × 383            = 0.866 g
 
 ## Outputs
 
-Every usage item that could be estimated gets two fields, `energy_usage_wh` and `co2eq_g`, rounded to three decimals. The markdown summary adds them up per repository, per workflow (`jobs` source only) and per SKU.
+Every usage item that could be estimated gets four fields: `energy_usage_wh` and `co2eq_g`, rounded to three decimals, and `water_cooling_l` and `water_electricity_production_l`, rounded to six. The markdown summary adds them up per repository, per workflow (`jobs` source only) and per SKU, with the two water sources in separate columns. The action outputs `total_water_cooling_l` and `total_water_electricity_l` alongside the energy and emissions totals.
 
 The badge shows the total over the period, in g or kg CO2eq. Its colour shows where the data came from: silver (`c0c0c0`) for the `jobs` source, where minutes and runner types are inferred, and gold for the `billing` source, where they are as billed.
 
@@ -155,6 +194,7 @@ The badge shows the total over the period, in g or kg CO2eq. Its colour shows wh
 - **Network and artifact transfer are not included.**
 - **CPU load is not known.** Every minute of a given runner type is priced at 50% load (see [Runner power](#runner-power)), whatever the job was actually doing.
 - **The `jobs` source is an approximation.** Durations are rounded up per job and runner types are guessed from labels. The source covers at most 5,000 runs.
+- **Water uses one WUE and one WCF for everything.** Neither varies by region, season or water stress (see [Water](#water)).
 - **One grid and one PUE for everything.** All jobs are treated as running in the US, at the same time of year.
 
 If you have better figures for any of these, issues and pull requests are welcome.

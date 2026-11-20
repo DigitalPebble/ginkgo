@@ -32,9 +32,19 @@ pub fn calculate_carbon_impact(bill: &mut ActionsBill) {
 
         let co2eq_g = energy_wh / 1000.0 * grid_intensity;
 
+        // energy already includes the PUE, which is the basis of both water factors
+        let water_cooling_l = energy_wh / 1000.0 * config.wue;
+        let water_electricity_production_l = energy_wh / 1000.0 * config.wcf;
+
+        item.water_cooling_l = Some(round6(water_cooling_l));
+        item.water_electricity_production_l = Some(round6(water_electricity_production_l));
         item.energy_usage_wh = Some((energy_wh * 1000.0).round() / 1000.0);
         item.co2eq_g = Some((co2eq_g * 1000.0).round() / 1000.0);
     }
+}
+
+fn round6(v: f64) -> f64 {
+    (v * 1_000_000.0).round() / 1_000_000.0
 }
 
 fn get_runner_power(config: &Config, sku: &str) -> Option<f64> {

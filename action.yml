@@ -65,6 +65,12 @@ outputs:
   total_energy_wh:
     description: 'Total estimated energy usage in watt-hours'
     value: ${{ steps.aspen.outputs.total_energy_wh }}
+  total_water_cooling_l:
+    description: 'Total estimated water consumed by data centre cooling, in litres'
+    value: ${{ steps.aspen.outputs.total_water_cooling_l }}
+  total_water_electricity_l:
+    description: 'Total estimated water consumed to generate the electricity used, in litres'
+    value: ${{ steps.aspen.outputs.total_water_electricity_l }}
 
 runs:
   using: 'composite'

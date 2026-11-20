@@ -62,6 +62,14 @@
     "description": "US average carbon intensity in grams CO2e per kWh for 2024, from https://ember-energy.org/",
     "value": 383
   },
+  "wue": {
+    "description": "Water Usage Effectiveness - litres of water consumed on site for cooling per kWh of IT energy. 0.34 is the value reported by Microsoft for its US data centres, as used by SPRUCE for the Azure regions (azure-pue-wue.csv)",
+    "value": 0.34
+  },
+  "wcf": {
+    "description": "Water Consumption Factor - litres of water consumed per kWh of electricity generated. Average of the WRI factors for the US Azure regions, from SPRUCE (wcf.csv)",
+    "value": 3.5781
+  },
   "pue": {
     "description": "Power Usage Effectiveness - ratio of total data center power to IT equipment power. Accounts for cooling, power distribution, and other overhead",
     "value": 1.16

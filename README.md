@@ -5,7 +5,7 @@
 [![CI CO2eq](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge.json)](https://github.com/DigitalPebble/aspen)
 [![CI CO2eq billing](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/DigitalPebble/aspen/badges/badge-billing.json)](https://github.com/DigitalPebble/aspen)
 
-Aspen estimates the energy use and carbon emissions of GitHub Actions for a repository or an organisation. It reads either the jobs of your workflow runs or the GitHub billing report, applies a carbon estimation model (see [Methodology](#methodology)) and writes a JSON report, a markdown summary and an optional badge.
+Aspen estimates the energy use, carbon emissions and water consumption of GitHub Actions for a repository or an organisation. It reads either the jobs of your workflow runs or the GitHub billing report, applies a carbon estimation model (see [Methodology](#methodology)) and writes a JSON report, a markdown summary and an optional badge.
 
 It runs in three ways:
 
@@ -68,6 +68,8 @@ The action analyses the jobs of this repository's workflow runs with the built-i
 | `badge-path` | Path to the badge JSON |
 | `total_co2eq_g` | Total estimated emissions (gCO2eq) |
 | `total_energy_wh` | Total estimated energy usage (Wh) |
+| `total_water_cooling_l` | Total estimated water consumed by data centre cooling (litres) |
+| `total_water_electricity_l` | Total estimated water consumed to generate the electricity used (litres) |
 
 The action also adds a markdown report (totals, per repository, per workflow and per runner SKU) to the job summary. The per-workflow table is only available with the `jobs` source: workflows are grouped by file, shown by name and linked to the file in the repository. Workflows sharing the same name in different files get separate rows.
 

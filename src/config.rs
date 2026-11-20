@@ -22,6 +22,10 @@ pub struct Config {
     pub storage_skus: HashMap<String, StorageSku>,
     pub grid_carbon_intensity: f64,
     pub pue: f64,
+    /// Litres of water consumed for cooling per kWh of IT energy
+    pub wue: f64,
+    /// Litres of water consumed per kWh of electricity generated
+    pub wcf: f64,
 }
 
 impl Config {
@@ -81,11 +85,16 @@ impl Config {
 
         let pue = root["pue"]["value"].as_f64().expect("Missing pue");
 
+        let wue = root["wue"]["value"].as_f64().expect("Missing wue");
+        let wcf = root["wcf"]["value"].as_f64().expect("Missing wcf");
+
         Config {
             runner_power_consumption,
             storage_skus,
             grid_carbon_intensity,
             pue,
+            wue,
+            wcf,
         }
     }
 

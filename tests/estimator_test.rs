@@ -212,3 +212,38 @@ fn empty_bill_produces_no_errors() {
     calculate_carbon_impact(&mut bill);
     assert!(bill.usage_items.is_empty());
 }
+
+#[test]
+fn splits_water_between_cooling_and_electricity() {
+    let mut bill = load_test_bill();
+    calculate_carbon_impact(&mut bill);
+
+    let item = bill
+        .usage_items
+        .iter()
+        .find(|i| i.sku == "Actions Linux")
+        .expect("no Actions Linux item");
+    let energy_kwh = item.energy_usage_wh.expect("energy not set") / 1000.0;
+
+    let cooling = item.water_cooling_l.expect("water_cooling_l not set");
+    let electricity = item
+        .water_electricity_production_l
+        .expect("water_electricity_production_l not set");
+
+    assert!((cooling - energy_kwh * 0.34).abs() < 1e-4);
+    assert!((electricity - energy_kwh * 3.5781).abs() < 1e-4);
+}
+
+#[test]
+fn no_water_without_energy_estimate() {
+    let mut bill = load_test_bill();
+    calculate_carbon_impact(&mut bill);
+    for item in bill
+        .usage_items
+        .iter()
+        .filter(|i| i.energy_usage_wh.is_none())
+    {
+        assert!(item.water_cooling_l.is_none());
+        assert!(item.water_electricity_production_l.is_none());
+    }
+}
