@@ -23,11 +23,19 @@ struct Job {
 }
 
 /// Labels of the standard Intel macOS runners (4 vCPUs), from
-/// <https://docs.github.com/en/actions/reference/runners/github-hosted-runners>.
-const MACOS_INTEL_LABELS: [&str; 2] = ["macos-15-intel", "macos-26-intel"];
+/// <https://docs.github.com/en/actions/reference/runners/github-hosted-runners>,
+/// plus the retired `macos-13`.
+const MACOS_INTEL_LABELS: [&str; 3] = ["macos-15-intel", "macos-26-intel", "macos-13"];
 
-/// Labels of the standard Apple silicon (M1) macOS runners (3 vCPUs), from the same page.
-const MACOS_ARM_LABELS: [&str; 4] = ["macos-latest", "macos-15", "macos-26", "xcode-27"];
+/// Labels of the standard Apple silicon (M1) macOS runners (3 vCPUs), from the same page,
+/// plus the retired `macos-14`.
+const MACOS_ARM_LABELS: [&str; 5] = [
+    "macos-latest",
+    "macos-15",
+    "macos-26",
+    "macos-14",
+    "xcode-27",
+];
 
 /// Maps the runner labels of a job to the SKU names used by the billing report.
 pub fn sku_for_labels(labels: &[String]) -> String {
