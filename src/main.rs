@@ -147,9 +147,10 @@ fn main() -> Result<()> {
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     } else {
-        let token = cli.token.as_deref().filter(|s| !s.is_empty()).context(
-            "GitHub token is required when not using --file (set INPUT_GITHUB_TOKEN)",
-        )?;
+        let token =
+            cli.token.as_deref().filter(|s| !s.is_empty()).context(
+                "GitHub token is required when not using --file (set INPUT_GITHUB_TOKEN)",
+            )?;
         let organization = repo
             .as_ref()
             .map(|(o, _)| o.as_str())
@@ -302,6 +303,18 @@ fn fetch_billing_usage(
 
 const MAX_RUN_PAGES: u32 = 50;
 
+/// The GitHub API rate limit was reached.
+#[derive(Debug)]
+struct RateLimited;
+
+impl std::fmt::Display for RateLimited {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "GitHub API rate limit reached")
+    }
+}
+
+impl std::error::Error for RateLimited {}
+
 fn get_json(client: &reqwest::blocking::Client, token: &str, url: &str) -> Result<String> {
     let response = client
         .get(url)
@@ -312,7 +325,17 @@ fn get_json(client: &reqwest::blocking::Client, token: &str, url: &str) -> Resul
         .send()
         .with_context(|| format!("Failed to send request to {}", url))?;
     let status = response.status();
+    let rate_limited = status.as_u16() == 429
+        || (status.as_u16() == 403
+            && response
+                .headers()
+                .get("x-ratelimit-remaining")
+                .and_then(|v| v.to_str().ok())
+                == Some("0"));
     let body = response.text()?;
+    if rate_limited {
+        return Err(RateLimited.into());
+    }
     if !status.is_success() {
         bail!(
             "GitHub API request {} failed: {} - {}",
@@ -324,30 +347,63 @@ fn get_json(client: &reqwest::blocking::Client, token: &str, url: &str) -> Resul
     Ok(body)
 }
 
-fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<ActionsBill> {
-    #[derive(serde::Deserialize)]
-    struct Runs {
-        #[serde(default)]
-        workflow_runs: Vec<Run>,
-    }
-    #[derive(serde::Deserialize)]
-    struct Run {
-        id: u64,
-        name: Option<String>,
-        path: Option<String>,
-    }
+#[derive(serde::Deserialize)]
+struct Runs {
+    #[serde(default)]
+    workflow_runs: Vec<Run>,
+}
 
+#[derive(serde::Deserialize)]
+struct Run {
+    id: u64,
+    name: Option<String>,
+    path: Option<String>,
+}
+
+fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<ActionsBill> {
     let client = reqwest::blocking::Client::new();
     let since = (chrono::Utc::now() - chrono::Duration::days(days as i64)).format("%Y-%m-%d");
     let base = format!("https://api.github.com/repos/{}/{}/actions", owner, repo);
     let mut bill = ActionsBill::default();
 
+    collect_jobs_usage(
+        &client,
+        token,
+        (owner, repo),
+        &base,
+        &since.to_string(),
+        &mut bill,
+    )
+    .map_err(|e| {
+        if e.downcast_ref::<RateLimited>().is_some() {
+            anyhow::anyhow!(
+                "GitHub API rate limit reached while reading workflow runs, no report generated. \
+                 The `jobs` source needs about one request per run and the built-in token allows \
+                 1,000 requests per hour. Use a personal access token (5,000 requests per hour), \
+                 reduce `days`, or switch to the `billing` source, which needs far fewer requests."
+            )
+        } else {
+            e
+        }
+    })?;
+    Ok(bill)
+}
+
+/// Reads runs newest first and adds their jobs to `bill`.
+fn collect_jobs_usage(
+    client: &reqwest::blocking::Client,
+    token: &str,
+    (owner, repo): (&str, &str),
+    base: &str,
+    since: &str,
+    bill: &mut ActionsBill,
+) -> Result<()> {
     for page in 1..=MAX_RUN_PAGES {
         let url = format!(
             "{}/runs?status=completed&created=>={}&per_page=100&page={}",
             base, since, page
         );
-        let runs: Runs = serde_json::from_str(&get_json(&client, token, &url)?)?;
+        let runs: Runs = serde_json::from_str(&get_json(client, token, &url)?)?;
         let count = runs.workflow_runs.len();
         for run in runs.workflow_runs {
             // `path` can carry a ref suffix (`ci.yml@refs/heads/main`)
@@ -361,7 +417,7 @@ fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<A
                     "{}/runs/{}/jobs?filter=all&per_page=100&page={}",
                     base, run.id, jobs_page
                 );
-                let body = get_json(&client, token, &url)?;
+                let body = get_json(client, token, &url)?;
                 let mut items = jobs::items_from_jobs(&body, owner, repo)?;
                 for item in &mut items {
                     item.workflow_name = name.clone();
@@ -377,12 +433,12 @@ fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<A
             }
         }
         if count < 100 {
-            return Ok(bill);
+            return Ok(());
         }
     }
     eprintln!(
         "Warning: stopped after {} pages of workflow runs; reduce --days for complete data",
         MAX_RUN_PAGES
     );
-    Ok(bill)
+    Ok(())
 }
