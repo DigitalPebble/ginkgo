@@ -59,8 +59,8 @@
     }
   },
   "grid_carbon_intensity": {
-    "description": "US average carbon intensity in grams CO2e per kWh for 2024, from https://ember-energy.org/",
-    "value": 383
+    "description": "US average carbon intensity in grams CO2e per kWh for 2025, from https://ember-energy.org/",
+    "value": 384
   },
   "wue": {
     "description": "Water Usage Effectiveness - litres of water consumed on site for cooling per kWh of IT energy. 0.34 is the value reported by Microsoft for its US data centres, as used by SPRUCE for the Azure regions (azure-pue-wue.csv)",

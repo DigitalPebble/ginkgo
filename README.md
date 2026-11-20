@@ -266,7 +266,7 @@ Once you have a first report, a few changes can bring the numbers down.
 
 ## Methodology
 
-Energy consumption estimates come from [BoaviztAPI](https://github.com/Boavizta/boaviztapi). The carbon intensity is an average for the US in 2024 from [Ember](https://ember-energy.org). The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for its datacentres in America in 2025.
+Energy consumption estimates come from [BoaviztAPI](https://github.com/Boavizta/boaviztapi). The carbon intensity is an average for the US in 2025 from [Ember](https://ember-energy.org). The PUE is as reported by [Microsoft](https://datacenters.microsoft.com/sustainability/efficiency/) for its datacentres in America in 2025.
 
 Storage billed in `GigabyteHours` uses the energy factor of the medium its SKU is assumed to use, times the number of copies kept of the data: SSD at 1.2 Wh per terabyte hour and a single copy for `Actions storage`, HDD at 0.65 Wh per terabyte hour and three copies for `Packages storage`. The factors come from the [SPRUCE storage module](https://opensourcegreenops.cloud/modules/#storage), and the same PUE and carbon intensity apply. Any other SKU billed in gigabyte hours is ignored, as are these two in any other unit.
 
