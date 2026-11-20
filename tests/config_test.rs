@@ -46,8 +46,8 @@ fn runner_power_consumption_contains_all_runners() {
         ("ubuntu-arm", 6.66),
         ("windows", 12.67),
         ("windows-arm", 7.33),
-        ("macos", -1.0),
-        ("macos-13", -1.0),
+        ("macos", 8.47),
+        ("macos-intel", 23.35),
     ];
 
     for (name, expected) in cases {

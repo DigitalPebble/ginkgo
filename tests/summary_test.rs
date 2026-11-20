@@ -61,14 +61,14 @@ fn markdown_for_empty_bill() {
 #[test]
 fn lists_runners_without_estimate() {
     let json = r#"{"usageItems":[{"date":"2026-01-01T00:00:00Z","product":"actions",
-        "sku":"Actions macOS 3-core","quantity":10.0,"unitType":"Minutes","pricePerUnit":0.0,
+        "sku":"Actions macOS 12-core","quantity":10.0,"unitType":"Minutes","pricePerUnit":0.0,
         "grossAmount":0.0,"discountAmount":0.0,"netAmount":0.0,
         "organizationName":"o","repositoryName":"r"}]}"#;
     let mut bill = ActionsBill::from_json(json).unwrap();
     calculate_carbon_impact(&mut bill);
     let md = to_markdown(&bill);
     assert!(md.contains("Not estimated"));
-    assert!(md.contains("Actions macOS 3-core"));
+    assert!(md.contains("Actions macOS 12-core"));
 }
 
 #[test]

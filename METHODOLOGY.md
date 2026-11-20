@@ -55,10 +55,11 @@ Aspen lists the completed workflow runs of the repository over the period, then 
 | `ubuntu` or `linux` | `Actions Linux` |
 | `windows`, plus `arm` | `Actions Windows ARM` |
 | `windows` | `Actions Windows` |
-| `macos` | `Actions macOS` |
+| `macos-15-intel`, `macos-26-intel` or `macos-13` | `Actions macOS 4-core` |
+| `macos-latest`, `macos-15`, `macos-26`, `macos-14` or `xcode-27` | `Actions macOS 3-core` |
 | anything else | the first label |
 
-Labels of larger runners are usually custom names, so they end up in the last row.
+Labels of larger runners are usually custom names, so they end up in the last row. The macOS labels are those of the [standard runners table](https://docs.github.com/en/actions/reference/runners/github-hosted-runners), matched exactly, with the retired `macos-14` (Apple silicon) and `macos-13` (Intel) added so older runs are still estimated. The macOS larger runners (`-large`, `-xlarge`) are not in the table, so they end up in the last row and get no estimate.
 
 ### Checking the input against GitHub
 
@@ -68,7 +69,7 @@ The minutes Aspen uses with the `jobs` source over the default 30 days should ma
 
 For this repository, GitHub reports 117 minutes over 96 job runs. Each job is rounded up to the minute, as Aspen does. The **Runtime OS** column matches the runner types Aspen infers from the labels. GitHub gives a workflow one row per OS, whereas the per-workflow table of Aspen's summary has one row per workflow file, so the three `release.yml` rows here make a single row of 54 minutes in Aspen.
 
-The emissions only cover the minutes Aspen can estimate. In this example the 12 macOS minutes of `release.yml` have no estimate (see [What is not estimated](#what-is-not-estimated)), so the totals cover 105 of the 117 minutes.
+The emissions only cover the minutes Aspen can estimate (see [What is not estimated](#what-is-not-estimated)). The macOS minutes of `release.yml` are estimated with the macOS figures from [Runner power](#runner-power).
 
 ## Runner power
 
@@ -81,8 +82,25 @@ Each SKU is mapped to a runner in `config.json`:
 | `Actions Linux ARM` | `ubuntu-arm` | 6.66 | 4 vCPU ARM64 VM, Scaleway COPARM1-4C-16G |
 | `Actions Windows` | `windows` | 12.67 | `ubuntu` plus 10% for OS overhead |
 | `Actions Windows ARM` | `windows-arm` | 7.33 | `ubuntu-arm` plus 10% for OS overhead |
+| `Actions macOS 3-core` | `macos` | 8.47 | 3 of the 8 vCPUs of an AWS `mac2.metal` (Apple M1 Mac mini) |
+| `Actions macOS 4-core` | `macos-intel` | 23.35 | 4 of the 12 vCPUs of an AWS `mac1.metal` (Intel Core i7-8700B Mac mini) |
 
 The figures come from [BoaviztAPI](https://github.com/Boavizta/boaviztapi) for these cloud instance types. See [Reproducing the figures](#reproducing-the-figures) for the commands. They are not GitHub's own hardware, which is not published. GitHub's standard hosted runners have had 4 vCPUs since December 2023, hence the choice of 4 vCPU instances.
+
+### macOS runners
+
+GitHub documents the [standard macOS runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners) as 3 vCPUs and 7 GB of memory on Apple silicon (M1), and 4 vCPUs and 14 GB on Intel. Unlike the Linux and Windows runners, they have the same size for public and private repositories. GitHub runs them on its own Mac fleet, so Aspen uses the closest hardware BoaviztAPI knows about, the Mac mini instances of AWS EC2. Those are bare metal, so BoaviztAPI gives the power of the whole machine and Aspen takes the share that matches the runner, by vCPU count, as it does for the other runners:
+
+| Runner | Host (BoaviztAPI) | CPU | Host power (W) | Share | Runner power (W) |
+|---|---|---|---|---|---|
+| `macos` | `mac2.metal`, 8 vCPUs, 16 GB | Apple M1, TDP 20 W | 22.59 | 3/8 | 8.47 |
+| `macos-intel` | `mac1.metal`, 12 vCPUs, 32 GB | Intel Core i7-8700B, 6 cores and 12 threads, TDP 65 W | 70.06 | 4/12 | 23.35 |
+
+The CPU details are in the [BoaviztAPI CPU specifications](https://github.com/Boavizta/boaviztapi/blob/main/boaviztapi/data/crowdsourcing/cpu_specs.csv). The host averages are about 1.1 times the TDP of each chip, which is a useful sanity check. Splitting by memory instead of vCPUs gives 9.88 W and 30.65 W, so the choice of ratio matters by up to 30%.
+
+Other sources agree on the order of magnitude for the M1 Mac mini. [Apple](https://support.apple.com/103253) rates it at 6.8 W idle and 39 W maximum, measured at the wall. [AnandTech](https://www.anandtech.com/show/16252) measured about 4 W idle and 26.5 W at the wall under a multi-threaded load. Eco-CI, which [carbon-badge](https://github.com/fabiocicerchia/carbon-badge) builds on, has a measured curve for the same machine of 4.45 W idle and 15.53 W at full load. Those are whole-machine figures, so the 8.47 W for a 3 vCPU share is lower than any of the busy values.
+
+Two assumptions are worth knowing about. GitHub does not say how many runners share a Mac, so the share is taken from the vCPU count. If a Mac hosted only two runners, each would account for about half of the host, which is 11.30 W and 35.03 W. BoaviztAPI also returns the same value for `mac2-m2.metal` as for `mac2.metal` and the same for `mac-m4.metal` as for `mac1.metal`, which look like fallbacks, so only the two instances above are used.
 
 The power is the instance's draw at **50% CPU load**. The GitHub APIs give no utilisation figures, so Aspen cannot tell a job compiling flat out from one waiting on the network, and applies the same average load to every minute. 50% sits between the two. A server still draws power when idle, so power does not scale linearly with load. A job running close to 100% for its whole duration will be underestimated, and one that is mostly idle overestimated, but by less than the difference in load suggests.
 
@@ -98,15 +116,22 @@ curl -s 'https://api.boavizta.org/v1/cloud/instance?provider=azure&instance_type
 curl -s 'https://api.boavizta.org/v1/cloud/instance?provider=scaleway&instance_type=coparm1-4c-16g&verbose=true&duration=1&criteria=fe' | jq '.verbose.avg_power.value'
 ```
 
-The derived runners are `ubuntu-slim` (`ubuntu` / 4), `windows` (`ubuntu` × 1.1) and `windows-arm` (`ubuntu-arm` × 1.1). The values in `config.json` are rounded to two decimals.
+```bash
+# macos: 22.5927 W for the whole host, 8 vCPUs, so 3/8 of it for a 3 vCPU runner
+curl -s 'https://api.boavizta.org/v1/cloud/instance?provider=aws&instance_type=mac2.metal&verbose=true&duration=1' | jq '.verbose.avg_power.value'
+
+# macos-intel: 70.0617 W for the whole host, 12 vCPUs, so 4/12 of it for a 4 vCPU runner
+curl -s 'https://api.boavizta.org/v1/cloud/instance?provider=aws&instance_type=mac1.metal&verbose=true&duration=1' | jq '.verbose.avg_power.value'
+```
+
+The derived runners are `ubuntu-slim` (`ubuntu` / 4), `windows` (`ubuntu` × 1.1), `windows-arm` (`ubuntu-arm` × 1.1), `macos` (22.5927 × 3 / 8) and `macos-intel` (70.0617 × 4 / 12). The values in `config.json` are rounded to two decimals.
 
 ### What is not estimated
 
 Usage on any other SKU gets no `energy_usage_wh` or `co2eq_g` and counts as zero in the totals. This applies to:
 
-- macOS runners (the config has placeholders with a value of `-1`, but no SKU maps to them yet);
 - self-hosted runners, whose hardware and location Aspen cannot know;
-- larger runners and GPU runners.
+- larger runners and GPU runners, including the macOS `-large` and `-xlarge` ones.
 
 These items are still listed in the report, so you can see how many minutes have no estimate.
 

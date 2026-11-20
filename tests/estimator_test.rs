@@ -247,3 +247,31 @@ fn no_water_without_energy_estimate() {
         assert!(item.water_electricity_production_l.is_none());
     }
 }
+
+#[test]
+fn computes_correct_values_for_macos() {
+    let json = r#"{"usageItems":[
+        {"date":"2026-01-01T00:00:00Z","product":"actions","sku":"Actions macOS 3-core",
+         "quantity":10.0,"unitType":"Minutes","pricePerUnit":0.0,"grossAmount":0.0,
+         "discountAmount":0.0,"netAmount":0.0,"organizationName":"o","repositoryName":"r"},
+        {"date":"2026-01-01T00:00:00Z","product":"actions","sku":"Actions macOS 4-core",
+         "quantity":10.0,"unitType":"Minutes","pricePerUnit":0.0,"grossAmount":0.0,
+         "discountAmount":0.0,"netAmount":0.0,"organizationName":"o","repositoryName":"r"}
+    ]}"#;
+    let mut bill = ActionsBill::from_json(json).unwrap();
+    calculate_carbon_impact(&mut bill);
+
+    for (item, power_w) in bill.usage_items.iter().zip([8.47, 23.35]) {
+        let (expected_energy, expected_co2) = expected_values(item.quantity, power_w);
+        assert_close(
+            &format!("{} energy_usage_wh", item.sku),
+            item.energy_usage_wh.expect("energy_usage_wh not set"),
+            expected_energy,
+        );
+        assert_close(
+            &format!("{} co2eq_g", item.sku),
+            item.co2eq_g.expect("co2eq_g not set"),
+            expected_co2,
+        );
+    }
+}

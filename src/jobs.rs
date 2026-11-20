@@ -22,6 +22,21 @@ struct Job {
     labels: Vec<String>,
 }
 
+/// Labels of the standard Intel macOS runners (4 vCPUs), from
+/// <https://docs.github.com/en/actions/reference/runners/github-hosted-runners>,
+/// plus the retired `macos-13`.
+const MACOS_INTEL_LABELS: [&str; 3] = ["macos-15-intel", "macos-26-intel", "macos-13"];
+
+/// Labels of the standard Apple silicon (M1) macOS runners (3 vCPUs), from the same page,
+/// plus the retired `macos-14`.
+const MACOS_ARM_LABELS: [&str; 5] = [
+    "macos-latest",
+    "macos-15",
+    "macos-26",
+    "macos-14",
+    "xcode-27",
+];
+
 /// Maps the runner labels of a job to the SKU names used by the billing report.
 pub fn sku_for_labels(labels: &[String]) -> String {
     let lower: Vec<String> = labels.iter().map(|l| l.to_lowercase()).collect();
@@ -30,6 +45,7 @@ pub fn sku_for_labels(labels: &[String]) -> String {
     }
     let any = |needle: &str| lower.iter().any(|l| l.contains(needle));
     let arm = lower.iter().any(|l| l.contains("arm"));
+    let is_any = |names: &[&str]| lower.iter().any(|l| names.contains(&l.as_str()));
     if any("ubuntu-slim") {
         "Actions Linux Slim".to_string()
     } else if any("ubuntu") || any("linux") {
@@ -46,8 +62,10 @@ pub fn sku_for_labels(labels: &[String]) -> String {
             "Actions Windows"
         }
         .to_string()
-    } else if any("macos") {
-        "Actions macOS".to_string()
+    } else if is_any(&MACOS_INTEL_LABELS) {
+        "Actions macOS 4-core".to_string()
+    } else if is_any(&MACOS_ARM_LABELS) {
+        "Actions macOS 3-core".to_string()
     } else {
         labels
             .first()
