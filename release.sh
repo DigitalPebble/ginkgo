@@ -20,7 +20,9 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   exit 1
 fi
 
-git fetch origin main --tags
+# --force: the floating major tag (v1) is moved on the remote, and a plain
+# fetch refuses to overwrite the local copy ("would clobber existing tag")
+git fetch --force origin main --tags
 git checkout main
 git merge --ff-only origin/main
 
