@@ -170,7 +170,7 @@ fn computes_correct_values_for_linux_arm() {
     let item = &bill.usage_items[1];
     assert_eq!(item.sku, "Actions Linux ARM");
 
-    let (expected_energy, expected_co2) = expected_values(item.quantity, 2.157); // ubuntu-arm
+    let (expected_energy, expected_co2) = expected_values(item.quantity, 6.66); // ubuntu-arm
 
     assert_close(
         "energy_usage_wh",
@@ -192,7 +192,7 @@ fn computes_correct_values_for_linux() {
     let item = &bill.usage_items[2];
     assert_eq!(item.sku, "Actions Linux");
 
-    let (expected_energy, expected_co2) = expected_values(item.quantity, 4.315); // ubuntu
+    let (expected_energy, expected_co2) = expected_values(item.quantity, 11.52); // ubuntu
 
     assert_close(
         "energy_usage_wh",

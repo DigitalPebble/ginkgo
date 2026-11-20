@@ -1,25 +1,25 @@
 {
   "power_consumption": {
-    "description": "Power consumption in Watts per hour for different runner types",
+    "description": "Power consumption in Watts for different runner types, at 50% load",
     "runners": {
       "ubuntu-slim": {
-        "value": 1.078,
+        "value": 2.88,
         "description": "Quarter of a standard ubuntu runner"
       },
       "ubuntu": {
-        "value": 4.315,
+        "value": 11.52,
         "description": "Standard 4-vCPU x86 Ubuntu VM, based on a D4as_v4 from Azure"
       },
       "windows": {
-        "value": 4.746,
-        "description": "Standard 4-vCPU x86 Windows VM (higher due to OS overhead)"
+        "value": 12.67,
+        "description": "Standard 4-vCPU x86 Windows VM (10% higher due to OS overhead)"
       },
       "ubuntu-arm": {
-        "value": 2.157,
+        "value": 6.66,
         "description": "4-vCPU ARM64 Ubuntu VM (more efficient), based on coparm1-4c-16g instance from Scaleway"
       },
       "windows-arm": {
-        "value": 2.372,
+        "value": 7.33,
         "description": "4-vCPU ARM64 Windows VM"
       },
       "macos": {

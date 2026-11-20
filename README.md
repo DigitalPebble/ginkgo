@@ -260,7 +260,7 @@ Once you have a first report, a few changes can bring the numbers down.
 
 1. Use your own runners in a region with a low carbon intensity, such as Sweden or France. GitHub hosted runners are mostly in the US, so the same job usually emits less on a grid with more nuclear, hydro or wind.
 2. Avoid triggering workflows when they are not needed. A change to the documentation should not lead to the code being built and tested again. Use `paths` or `paths-ignore` filters on your `push` and `pull_request` triggers, and add a `concurrency` group with `cancel-in-progress` so superseded runs stop early.
-3. Run jobs on ARM runners where your code supports it, for example `ubuntu-24.04-arm`. In Aspen's model a 4 vCPU ARM Ubuntu runner draws 2.157 W against 4.315 W for the x86 one, about half. These figures come from instance types of other cloud providers (Scaleway for ARM, Azure for x86) and not from GitHub's own hardware, so treat the saving as an estimate. It also assumes the job takes about as long on both architectures, so compare durations after switching.
+3. Run jobs on ARM runners where your code supports it, for example `ubuntu-24.04-arm`. In Aspen's model a 4 vCPU ARM Ubuntu runner draws 6.66 W against 11.52 W for the x86 one, a little over half. These figures come from instance types of other cloud providers (Scaleway for ARM, Azure for x86) and not from GitHub's own hardware, so treat the saving as an estimate. It also assumes the job takes about as long on both architectures, so compare durations after switching.
 4. Cache dependencies and build outputs, so jobs spend less time downloading and compiling the same things.
 5. Pick the smallest runner that does the job, and stop long jobs as soon as they fail.
 
