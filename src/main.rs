@@ -13,6 +13,8 @@ use model::ActionsBill;
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::Mutex;
 
 #[derive(Clone, Copy, clap::ValueEnum)]
 enum Source {
@@ -314,6 +316,8 @@ impl std::fmt::Display for RateLimited {
 }
 
 impl std::error::Error for RateLimited {}
+/// Number of threads fetching the jobs of workflow runs concurrently.
+const JOB_WORKERS: usize = 8;
 
 fn get_json(client: &reqwest::blocking::Client, token: &str, url: &str) -> Result<String> {
     let response = client
@@ -347,12 +351,7 @@ fn get_json(client: &reqwest::blocking::Client, token: &str, url: &str) -> Resul
     Ok(body)
 }
 
-#[derive(serde::Deserialize)]
-struct Runs {
-    #[serde(default)]
-    workflow_runs: Vec<Run>,
-}
-
+/// A completed workflow run, as listed by the runs API.
 #[derive(serde::Deserialize)]
 struct Run {
     id: u64,
@@ -360,21 +359,46 @@ struct Run {
     path: Option<String>,
 }
 
-fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<ActionsBill> {
-    let client = reqwest::blocking::Client::new();
-    let since = (chrono::Utc::now() - chrono::Duration::days(days as i64)).format("%Y-%m-%d");
-    let base = format!("https://api.github.com/repos/{}/{}/actions", owner, repo);
-    let mut bill = ActionsBill::default();
+/// Fetches the jobs of one workflow run and converts them to usage items.
+fn fetch_run_items(
+    client: &reqwest::blocking::Client,
+    token: &str,
+    base: &str,
+    run: &Run,
+    owner: &str,
+    repo: &str,
+) -> Result<Vec<model::UsageItem>> {
+    // `path` can carry a ref suffix (`ci.yml@refs/heads/main`)
+    let path = run
+        .path
+        .as_deref()
+        .map(|p| p.split('@').next().unwrap_or(p).to_string());
+    let name = run.name.clone().or_else(|| path.clone());
+    let mut all = Vec::new();
+    for jobs_page in 1.. {
+        let url = format!(
+            "{}/runs/{}/jobs?filter=all&per_page=100&page={}",
+            base, run.id, jobs_page
+        );
+        let body = get_json(client, token, &url)?;
+        let mut items = jobs::items_from_jobs(&body, owner, repo)?;
+        for item in &mut items {
+            item.workflow_name = name.clone();
+            item.workflow_path = path.clone();
+        }
+        let total = serde_json::from_str::<serde_json::Value>(&body)?["jobs"]
+            .as_array()
+            .map_or(0, |a| a.len());
+        all.extend(items);
+        if total < 100 {
+            break;
+        }
+    }
+    Ok(all)
+}
 
-    collect_jobs_usage(
-        &client,
-        token,
-        (owner, repo),
-        &base,
-        &since.to_string(),
-        &mut bill,
-    )
-    .map_err(|e| {
+fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<ActionsBill> {
+    collect_jobs_usage(token, owner, repo, days).map_err(|e| {
         if e.downcast_ref::<RateLimited>().is_some() {
             anyhow::anyhow!(
                 "GitHub API rate limit reached while reading workflow runs, no report generated. \
@@ -385,60 +409,85 @@ fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<A
         } else {
             e
         }
-    })?;
-    Ok(bill)
+    })
 }
 
-/// Reads runs newest first and adds their jobs to `bill`.
-fn collect_jobs_usage(
-    client: &reqwest::blocking::Client,
-    token: &str,
-    (owner, repo): (&str, &str),
-    base: &str,
-    since: &str,
-    bill: &mut ActionsBill,
-) -> Result<()> {
+fn collect_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<ActionsBill> {
+    #[derive(serde::Deserialize)]
+    struct Runs {
+        #[serde(default)]
+        workflow_runs: Vec<Run>,
+    }
+
+    let client = reqwest::blocking::Client::new();
+    let since = (chrono::Utc::now() - chrono::Duration::days(days as i64)).format("%Y-%m-%d");
+    let base = format!("https://api.github.com/repos/{}/{}/actions", owner, repo);
+
+    // List the runs first, page by page.
+    let mut runs: Vec<Run> = Vec::new();
     for page in 1..=MAX_RUN_PAGES {
         let url = format!(
             "{}/runs?status=completed&created=>={}&per_page=100&page={}",
             base, since, page
         );
-        let runs: Runs = serde_json::from_str(&get_json(client, token, &url)?)?;
-        let count = runs.workflow_runs.len();
-        for run in runs.workflow_runs {
-            // `path` can carry a ref suffix (`ci.yml@refs/heads/main`)
-            let path = run
-                .path
-                .as_deref()
-                .map(|p| p.split('@').next().unwrap_or(p).to_string());
-            let name = run.name.clone().or_else(|| path.clone());
-            for jobs_page in 1.. {
-                let url = format!(
-                    "{}/runs/{}/jobs?filter=all&per_page=100&page={}",
-                    base, run.id, jobs_page
-                );
-                let body = get_json(client, token, &url)?;
-                let mut items = jobs::items_from_jobs(&body, owner, repo)?;
-                for item in &mut items {
-                    item.workflow_name = name.clone();
-                    item.workflow_path = path.clone();
-                }
-                let total: usize = serde_json::from_str::<serde_json::Value>(&body)?["jobs"]
-                    .as_array()
-                    .map_or(0, |a| a.len());
-                bill.usage_items.extend(items);
-                if total < 100 {
-                    break;
-                }
-            }
-        }
+        let listed: Runs = serde_json::from_str(&get_json(&client, token, &url)?)?;
+        let count = listed.workflow_runs.len();
+        runs.extend(listed.workflow_runs);
+        eprintln!("Listed {} workflow runs (page {})", runs.len(), page);
         if count < 100 {
-            return Ok(());
+            break;
+        }
+        if page == MAX_RUN_PAGES {
+            eprintln!(
+                "Warning: stopped after {} pages of workflow runs; reduce --days for complete data",
+                MAX_RUN_PAGES
+            );
         }
     }
-    eprintln!(
-        "Warning: stopped after {} pages of workflow runs; reduce --days for complete data",
-        MAX_RUN_PAGES
-    );
-    Ok(())
+
+    // Then fetch the jobs of each run with a pool of worker threads.
+    let total = runs.len();
+    let workers = JOB_WORKERS.min(total.max(1));
+    eprintln!("Fetching jobs for {} runs with {} workers", total, workers);
+    let next = AtomicUsize::new(0);
+    let done = AtomicUsize::new(0);
+    let failed = AtomicBool::new(false);
+    let results: Mutex<Vec<Option<Vec<model::UsageItem>>>> = Mutex::new(vec![None; total]);
+    let first_error: Mutex<Option<anyhow::Error>> = Mutex::new(None);
+    let step = (total / 20).max(1);
+
+    std::thread::scope(|scope| {
+        for _ in 0..workers {
+            scope.spawn(|| loop {
+                if failed.load(Ordering::Relaxed) {
+                    return;
+                }
+                let i = next.fetch_add(1, Ordering::Relaxed);
+                let Some(run) = runs.get(i) else { return };
+                match fetch_run_items(&client, token, &base, run, owner, repo) {
+                    Ok(items) => {
+                        results.lock().unwrap()[i] = Some(items);
+                        let n = done.fetch_add(1, Ordering::Relaxed) + 1;
+                        if n % step == 0 || n == total {
+                            eprintln!("Fetched jobs for {}/{} runs", n, total);
+                        }
+                    }
+                    Err(e) => {
+                        failed.store(true, Ordering::Relaxed);
+                        first_error.lock().unwrap().get_or_insert(e);
+                        return;
+                    }
+                }
+            });
+        }
+    });
+
+    if let Some(e) = first_error.into_inner().unwrap() {
+        return Err(e);
+    }
+    let mut bill = ActionsBill::default();
+    for items in results.into_inner().unwrap().into_iter().flatten() {
+        bill.usage_items.extend(items);
+    }
+    Ok(bill)
 }
