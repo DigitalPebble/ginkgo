@@ -149,9 +149,10 @@ fn main() -> Result<()> {
         println!("Loaded {} usage items", bill.usage_items.len());
         bill
     } else {
-        let token = cli.token.as_deref().filter(|s| !s.is_empty()).context(
-            "GitHub token is required when not using --file (set INPUT_GITHUB_TOKEN)",
-        )?;
+        let token =
+            cli.token.as_deref().filter(|s| !s.is_empty()).context(
+                "GitHub token is required when not using --file (set INPUT_GITHUB_TOKEN)",
+            )?;
         let organization = repo
             .as_ref()
             .map(|(o, _)| o.as_str())
@@ -304,6 +305,17 @@ fn fetch_billing_usage(
 
 const MAX_RUN_PAGES: u32 = 50;
 
+/// The GitHub API rate limit was reached.
+#[derive(Debug)]
+struct RateLimited;
+
+impl std::fmt::Display for RateLimited {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "GitHub API rate limit reached")
+    }
+}
+
+impl std::error::Error for RateLimited {}
 /// Number of threads fetching the jobs of workflow runs concurrently.
 const JOB_WORKERS: usize = 8;
 
@@ -317,7 +329,17 @@ fn get_json(client: &reqwest::blocking::Client, token: &str, url: &str) -> Resul
         .send()
         .with_context(|| format!("Failed to send request to {}", url))?;
     let status = response.status();
+    let rate_limited = status.as_u16() == 429
+        || (status.as_u16() == 403
+            && response
+                .headers()
+                .get("x-ratelimit-remaining")
+                .and_then(|v| v.to_str().ok())
+                == Some("0"));
     let body = response.text()?;
+    if rate_limited {
+        return Err(RateLimited.into());
+    }
     if !status.is_success() {
         bail!(
             "GitHub API request {} failed: {} - {}",
@@ -376,6 +398,21 @@ fn fetch_run_items(
 }
 
 fn fetch_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<ActionsBill> {
+    collect_jobs_usage(token, owner, repo, days).map_err(|e| {
+        if e.downcast_ref::<RateLimited>().is_some() {
+            anyhow::anyhow!(
+                "GitHub API rate limit reached while reading workflow runs, no report generated. \
+                 The `jobs` source needs about one request per run and the built-in token allows \
+                 1,000 requests per hour. Use a personal access token (5,000 requests per hour), \
+                 reduce `days`, or switch to the `billing` source, which needs far fewer requests."
+            )
+        } else {
+            e
+        }
+    })
+}
+
+fn collect_jobs_usage(token: &str, owner: &str, repo: &str, days: u32) -> Result<ActionsBill> {
     #[derive(serde::Deserialize)]
     struct Runs {
         #[serde(default)]

@@ -51,6 +51,8 @@ steps:
 
 The action analyses the jobs of this repository's workflow runs with the built-in `GITHUB_TOKEN`. The token can only see this repository, and the data it reads is already visible to anyone who can see its Actions runs, so the risk is low.
 
+The built-in token is limited by GitHub to 1,000 API requests per hour (15,000 on GitHub Enterprise Cloud), and the `jobs` source needs about one request per workflow run. Above roughly 950 runs in the period, Aspen hits the limit, prints an error and exits with a non-zero code, without writing the report or the summary. Pass a personal access token (5,000 requests per hour) as `github_token`, lower `days`, or switch to the `billing` source, which needs far fewer requests.
+
 | Input | Default | Description |
 |-------|---------|-------------|
 | `source` | `jobs` | `jobs` or `billing` |
